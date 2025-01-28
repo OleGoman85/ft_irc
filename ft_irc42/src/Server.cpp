@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/27 09:32:52 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/01/28 10:55:09 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -429,6 +429,7 @@ struct sockaddr {
 #include <stdexcept>
 #include <cstring>
 #include <unistd.h>
+#include <algorithm>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -715,7 +716,11 @@ void Server::processCommand(int fd, const std::string& command) {
     std::vector<std::string> tokens = Utils::split(command, ' ');
     if (tokens.empty())
         return;
+
+        
+    // Convert the command to uppercase for case-insensitive processing
     std::string cmd = tokens[0];
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper); // Convert to uppercase
 
     if (cmd == "PASS") {
         handlePassCommand(this, fd, tokens, command);
