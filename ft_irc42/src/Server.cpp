@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/28 10:55:09 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/01/28 11:26:42 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -431,6 +431,7 @@ struct sockaddr {
 #include <unistd.h>
 #include <algorithm>
 #include <fcntl.h>
+#include <algorithm> // for std::transform
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "../commands/Nick.hpp"
@@ -716,7 +717,6 @@ void Server::processCommand(int fd, const std::string& command) {
     std::vector<std::string> tokens = Utils::split(command, ' ');
     if (tokens.empty())
         return;
-
         
     // Convert the command to uppercase for case-insensitive processing
     std::string cmd = tokens[0];
