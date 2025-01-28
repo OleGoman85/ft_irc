@@ -36,7 +36,8 @@ void handleKickCommand(Server* server, int fd, const std::vector<std::string>& t
     
     // Find the specified channel.
     auto it = server->_channels.find(channelName);
-    if (it == server->_channels.end()) {
+    if (it == server->_channels.end()) 
+    {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -45,11 +46,18 @@ void handleKickCommand(Server* server, int fd, const std::vector<std::string>& t
     bool found = false;
     // Search for the target user in the channel.
     for (int cli_fd : it->second.getClients()) {
-        if (server->_clients[cli_fd]->nickname == targetNick) {
-            // Remove the target user from the channel.
+        auto clientIt = server->_clients.find(cli_fd);
+        if (clientIt == server->_clients.end()) {
+            continue; // Skip if the client is no longer there
+        }
+
+        if (clientIt->second->nickname == targetNick) {
             it->second.removeClient(cli_fd);
+            if (it->second.getClients().empty()) {
+                server->_channels.erase(it); // Delete the channel if it is empty
+            }
+
             std::string kickMsg = ":" + server->_clients[fd]->nickname + " KICK " + channelName + " " + targetNick + " :Kicked\r\n";
-            // Broadcast the KICK message to all other clients in the channel.
             server->broadcastMessage(kickMsg, fd);
             found = true;
             break;
