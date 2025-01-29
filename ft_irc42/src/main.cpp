@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:40:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/28 12:18:47 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/01/29 07:38:23 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,16 +23,23 @@ int main(int argc, char* argv[])
     }
 
     int port;
-    try {
-        port = std::stoi(argv[1]);
-        // Check if the port is within the valid range
-        if (port < 1024 || port > 65535) {
-            std::cerr << "Error: Port must be in the range 1024-65535.\n";
+    if(std::string(argv[1]) == "port")
+    {
+        port = 6667;
+    }
+    else
+    {
+        try {
+            port = std::stoi(argv[1]);
+            // Check if the port is within the valid range
+            if (port < 1024 || port > 65535) {
+                std::cerr << "Error: Port must be in the range 1024-65535.\n";
+                return EXIT_FAILURE;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Invalid port number.\n";
             return EXIT_FAILURE;
         }
-    } catch (const std::exception& e) {
-        std::cerr << "Invalid port number.\n";
-        return EXIT_FAILURE;
     }
 
     std::string password = argv[2];
@@ -51,9 +58,12 @@ int main(int argc, char* argv[])
 
 /*
     term1  ./ircserv 6667 mypassword
+            ./ircserv port mypassword
                 Сервер запущен на порту 6667
+                
 
     term2  nc 127.0.0.1 6667
+            nc localhost 6667
                 Hello Server
 
     nc = (Netcat)
