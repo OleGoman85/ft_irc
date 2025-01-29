@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/29 07:11:28 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/01/29 11:31:20 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -434,6 +434,7 @@ struct sockaddr {
 #include <algorithm> // for std::transform
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netinet/tcp.h>
 #include "../commands/Nick.hpp"
 #include "../commands/Pass.hpp"
 #include "../commands/User.hpp"
@@ -496,6 +497,11 @@ void Server::setupServer()
     int opt = 1; 
     if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
         throw std::runtime_error("setsockopt failed");
+
+    // Disables Nagle's algorithm for the server (reduces delays for small packets)
+    int flag = 1;
+    if (setsockopt(_listen_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) < 0)
+        throw std::runtime_error("setsockopt TCP_NODELAY failed");
     
     // Setting non-blocking mode
     if (fcntl(_listen_fd, F_SETFL, O_NONBLOCK) < 0)
@@ -537,7 +543,7 @@ void Server::run()
     while (true)  // Infinite loop, running as long as the server is active.
     {
         // Call poll to monitor events on all sockets.
-        int poll_count = poll(_poll_fds.data(), _poll_fds.size(), -1);
+        int poll_count = poll(_poll_fds.data(), _poll_fds.size(), 100);
 
         // Check if poll returned an error (negative value).
         if (poll_count < 0) {
@@ -591,6 +597,14 @@ void Server::acceptNewConnection()
     if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0) {
         std::cerr << "Failed to set non-blocking mode for client\n";
         close(client_fd); // Close the client's socket if the operation fails
+        return;
+    }
+
+    // Disables Nagle's algorithm for the client (improves message sending speed)
+    int flag = 1;
+    if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) < 0) {
+        std::cerr << "setsockopt TCP_NODELAY failed for client\n";
+        close(client_fd);
         return;
     }
 
@@ -702,6 +716,7 @@ void Server::broadcastMessage(const std::string& message, int sender_fd)
         int client_fd = pair.first;
         if (client_fd != sender_fd)
             send(client_fd, message.c_str(), message.size(), 0);
+        fsync(client_fd);
     }
 }
 
