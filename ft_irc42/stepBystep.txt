@@ -33,6 +33,11 @@ USER oleg 0 * :Oleg
 2. JOIN #testchannel
 
 
+//! PART  - vihod iz gruppi
+PART #tc 
+PART #tc :GoodBuy
+
+
 
 //!PRIVMSG – отправка сообщений другим пользователям или каналам.
 Клиент: from terminal User1
@@ -58,9 +63,9 @@ INVITE User2 #testchannel
 
 
 
-(poka ne tochno)//!TOPIC – установка или просмотр темы канала
+//!TOPIC – установка или просмотр темы канала
 TOPIC #testchannel :New Channel Topic
-TOPIC #testchannel ( запросить тему)
+TOPIC #testchannel (proverka topica)
 
 
 //!MODE – изменение режимов канала

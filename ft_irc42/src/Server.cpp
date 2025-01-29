@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/28 11:26:42 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/01/29 07:11:28 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -444,6 +444,7 @@ struct sockaddr {
 #include "../commands/Invite.hpp"
 #include "../commands/Topic.hpp"
 #include "../commands/Mode.hpp"
+#include "../commands/Part.hpp"
 
 
 
@@ -739,6 +740,9 @@ void Server::processCommand(int fd, const std::string& command) {
     }
     else if (cmd == "QUIT") {
         handleQuitCommand(this, fd, tokens, command);
+    }
+    else if (cmd == "PART") {
+        handlePartCommand(this, fd, tokens, command);
     }
     else if (cmd == "KICK") {
         handleKickCommand(this, fd, tokens, command);
