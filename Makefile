@@ -52,8 +52,7 @@ fclean: clean
 	@rm -f $(NAME)
 	@echo "$(BGreen)FT_IRC environment is spotless! 🌟"
 
-# Rebuild the project from scratch
-re: fclean all
+
 
 # ASCII art for a cool tag header
 tag:
@@ -73,4 +72,11 @@ tag:
 # Declare pseudo-targets to avoid conflicts with files named all, clean, etc.
 .PHONY: all clean fclean re tag
 
+# Run tests
+test:
+	@echo "$(BYellow)[🔍] Running tests..."
+	@python3 tests/test_irc.py || echo "$(BRed)[❌] Tests failed!"
+
+# Rebuild everything and run tests
+re: fclean all test
 
