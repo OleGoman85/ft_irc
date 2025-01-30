@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/30 16:42:16 by alisa            ###   ########.fr       */
+/*   Updated: 2025/01/30 16:53:29 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -756,23 +756,50 @@ void Server::removeClient(int fd)
 }
 
 /**
- * @brief Broadcasts a message to all clients except the sender.
+ * @brief Sends a message to all connected clients except the sender.
  *
- * Iterates over the client map and sends the provided message to each client
- * whose file descriptor is not equal to sender_fd.
+ * This function iterates over the list of connected clients and sends
+ * the provided message to each client except the one that sent it.
+ *
+ * Before sending, it checks:
+ * - If the client is still in the `_clients` map (not disconnected).
+ * - If the client's socket is present in `_poll_fds` and marked as `POLLOUT`
+ * (ready for writing).
+ * - If `send()` fails, the client is removed to prevent issues with broken
+ * connections.
  *
  * @param message The message to be broadcast.
- * @param sender_fd File descriptor of the sender (this client will be excluded
- * from receiving the message).
+ * @param sender_fd The file descriptor of the sender (this client will not
+ * receive the message).
  */
 void Server::broadcastMessage(const std::string& message, int sender_fd)
 {
     for (const auto& pair : _clients)
     {
         int client_fd = pair.first;
-        if (client_fd != sender_fd)
-            send(client_fd, message.c_str(), message.size(), 0);
-        fsync(client_fd);
+
+        // Skip the sender
+        if (client_fd == sender_fd) continue;
+
+        // Check if client is still connected
+        if (_clients.find(client_fd) == _clients.end()) continue;
+
+        // Check if the client is ready for writing
+        auto it = std::find_if(_poll_fds.begin(), _poll_fds.end(),
+                               [client_fd](const struct pollfd& p)
+                               { return p.fd == client_fd; });
+
+        if (it != _poll_fds.end() && (it->revents & POLLOUT))
+        {
+            ssize_t bytes_sent =
+                send(client_fd, message.c_str(), message.size(), 0);
+            if (bytes_sent <= 0)
+            {
+                std::cerr << "Error sending message to client (fd: "
+                          << client_fd << "), removing client.\n";
+                removeClient(client_fd);
+            }
+        }
     }
 }
 
