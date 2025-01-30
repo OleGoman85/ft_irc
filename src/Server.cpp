@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/30 16:53:29 by alisa            ###   ########.fr       */
+/*   Updated: 2025/01/30 17:03:16 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -684,12 +684,11 @@ void Server::acceptNewConnection()
  *
  * @param fd File descriptor of the client.
  */
-void Server::handleClientData(int fd)
-{
-    char buffer[512];
-    int  bytes_received = recv(fd, buffer, sizeof(buffer), 0);
-    if (bytes_received <= 0)
-    {
+void Server::handleClientData(int fd) {
+    char buffer[512];  
+    int bytes_received = recv(fd, buffer, sizeof(buffer), 0);
+
+    if (bytes_received <= 0) {  
         if (bytes_received == 0)
             std::cout << "Client (fd: " << fd << ") disconnected\n";
         else
@@ -697,43 +696,36 @@ void Server::handleClientData(int fd)
         removeClient(fd);
         return;
     }
-    // Append received data to the client's buffer.
+
+    // Append received data to the client's buffer
     _clients[fd]->buffer.append(buffer, bytes_received);
 
     size_t pos;
-    while (true)
-    {
-        // Search for the command delimiter "\r\n" (or "\n" as fallback).
+    while (true) {
+        // Check if a full command (ending with "\r\n") is available
         pos = _clients[fd]->buffer.find("\r\n");
         if (pos == std::string::npos)
-        {
-            pos = _clients[fd]->buffer.find("\n");
-            if (pos != std::string::npos && pos > 0 &&
-                _clients[fd]->buffer[pos - 1] == '\r')
-            {
-                pos -= 1;
-            }
-        }
-        // If no delimiter is found, break out of the loop.
-        if (pos == std::string::npos) break;
+            return; // Wait until the full command is received
 
-        // Extract the command up to the delimiter.
+        // Extract the command from the buffer
         std::string command = _clients[fd]->buffer.substr(0, pos);
 
-        // Remove the command and its delimiter from the buffer.
-        if (_clients[fd]->buffer.substr(pos, 2) == "\r\n")
-            _clients[fd]->buffer.erase(0, pos + 2);
-        else
-            _clients[fd]->buffer.erase(0, pos + 1);
+        // Remove the processed command from the buffer
+        _clients[fd]->buffer.erase(0, pos + 2);  
 
-        // Trim whitespace from the beginning and end of the command.
+        // Trim leading and trailing spaces
         command.erase(0, command.find_first_not_of(" \t"));
         command.erase(command.find_last_not_of(" \t") + 1);
 
+        // Process the command
         processCommand(fd, command);
-        if (_clients.find(fd) == _clients.end()) break;
+
+        // If the client was removed after command execution, stop processing
+        if (_clients.find(fd) == _clients.end())
+            break;
     }
 }
+
 
 /**
  * @brief Removes a client from the server.
