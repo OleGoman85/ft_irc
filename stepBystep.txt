@@ -33,6 +33,11 @@ USER oleg 0 * :Oleg
 2. JOIN #testchannel
 
 
+//! PART  - vihod iz gruppi
+PART #tc 
+PART #tc :GoodBuy
+
+
 
 //!PRIVMSG – отправка сообщений другим пользователям или каналам.
 Клиент: from terminal User1
@@ -58,9 +63,9 @@ INVITE User2 #testchannel
 
 
 
-(poka ne tochno)//!TOPIC – установка или просмотр темы канала
+//!TOPIC – установка или просмотр темы канала
 TOPIC #testchannel :New Channel Topic
-TOPIC #testchannel ( запросить тему)
+TOPIC #testchannel (proverka topica)
 
 
 //!MODE – изменение режимов канала
@@ -141,3 +146,24 @@ MODE #channel +t – ограничить смену темы только дл�
 MODE #channel +o someNick – назначить оператора
 Ожидание:
 При вводе команды «MODE #channel +o someNick» сервер должен назначить пользователя с никнеймом someNick оператором канала, что даёт ему права изменять режимы канала, кикать участников, менять топик и т.д.
+
+
+
+
+privet.
+ja segodnja slomal golovu, peredaju estafetu tebe :D ..... sdelal melkie izminenija i to chto est, u nas rabotaet, noooo....
+
+zapusti server  ./ircserv port 123    ili    ./ircserv 6667 123
+
+v drugom zajdi v tuze papku gde ircserv i ot uda vvedi
+irssi -c localhost -p 6667 -w 123
+
+i budet tebe schaste....
+
+ah da, nooooo ja ochen slabo ponimaju, kak tam rabotat!
+
+kak ja ponjal eto obolochka dlja irc. v teorii, esli u nas vse rabotaet s nc to i tam dolzno rabotat i vrode daze rabotaet (vrode, daze, ne ponimaju)
+
+esli zapustit nc 127.0.0.1 6667 kak obicno to u nas tolko MODE stradaet, a tam vse sranno.
+
+mozew toze vvesti v pustom terminale irssi :)
