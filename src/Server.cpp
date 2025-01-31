@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/31 10:47:49 by alisa            ###   ########.fr       */
+/*   Updated: 2025/01/31 10:53:32 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -603,7 +603,7 @@ void Server::run()
         // Check if poll returned an error (negative value).
         if (poll_count < 0)
         {
-            std::cerr << "poll error\n";  // Log the error message.
+            std::cerr << "poll error: " << strerror(errno) << "\n"; // Show detailed error
             continue;  // Skip to the next iteration of the loop.
         }
 
@@ -624,6 +624,7 @@ void Server::run()
         }
     }
 }
+
 
 /**
  * @brief Accepts a new client connection.
@@ -772,26 +773,30 @@ void Server::removeClient(int fd)
  * the provided message to each client except the one that sent it.
  *
  * If a client's socket buffer is full (send returns EWOULDBLOCK or EAGAIN),
- * the function enables POLLOUT for the client, allowing the server to retry sending later.
- * If send fails with any other error, the client is removed.
+ * the function enables POLLOUT for the client, allowing the server to retry
+ * sending later. If send fails with any other error, the client is removed.
  *
  * @param message The message to be broadcasted.
- * @param sender_fd The file descriptor of the sender (this client will not receive the message).
+ * @param sender_fd The file descriptor of the sender (this client will not
+ * receive the message).
  */
 void Server::broadcastMessage(const std::string& message, int sender_fd)
 {
     for (const auto& pair : _clients)
     {
         int client_fd = pair.first;
-        if (client_fd == sender_fd) continue;  // Do not send the message to the sender
+        if (client_fd == sender_fd)
+            continue;  // Do not send the message to the sender
 
-        ssize_t bytes_sent = send(client_fd, message.c_str(), message.size(), 0);
+        ssize_t bytes_sent =
+            send(client_fd, message.c_str(), message.size(), 0);
 
         if (bytes_sent < 0)
         {
             if (errno == EWOULDBLOCK || errno == EAGAIN)
             {
-                // The buffer is full, enable POLLOUT for this client to retry sending later
+                // The buffer is full, enable POLLOUT for this client to retry
+                // sending later
                 for (size_t i = 0; i < _poll_fds.size(); ++i)
                 {
                     if (_poll_fds[i].fd == client_fd)
@@ -805,14 +810,13 @@ void Server::broadcastMessage(const std::string& message, int sender_fd)
             else
             {
                 // If the error is not EWOULDBLOCK or EAGAIN, remove the client
-                std::cerr << "Error sending message to client (fd: " << client_fd << "), removing client.\n";
+                std::cerr << "Error sending message to client (fd: "
+                          << client_fd << "), removing client.\n";
                 removeClient(client_fd);
             }
         }
     }
 }
-
-
 
 /**
  * @brief Processes a complete command received from a client.
