@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/31 10:01:10 by alisa            ###   ########.fr       */
+/*   Updated: 2025/01/31 10:47:49 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -512,8 +512,6 @@ Server::~Server()
     if (_listen_fd != -1) close(_listen_fd);
 }
 
-
-
 // --- добавленные геттеры
 const std::string& Server::getPassword() const
 {
@@ -530,8 +528,6 @@ std::map<std::string, Channel>& Server::getChannels()
     return _channels;
 }
 // --- конец добавления
-
-
 
 /**
  * @brief Sets up the server socket.
@@ -705,11 +701,13 @@ void Server::acceptNewConnection()
  *
  * @param fd File descriptor of the client.
  */
-void Server::handleClientData(int fd) {
-    char buffer[512];  
-    int bytes_received = recv(fd, buffer, sizeof(buffer), 0);
+void Server::handleClientData(int fd)
+{
+    char buffer[512];
+    int  bytes_received = recv(fd, buffer, sizeof(buffer), 0);
 
-    if (bytes_received <= 0) {  
+    if (bytes_received <= 0)
+    {
         if (bytes_received == 0)
             std::cout << "Client (fd: " << fd << ") disconnected\n";
         else
@@ -722,17 +720,18 @@ void Server::handleClientData(int fd) {
     _clients[fd]->buffer.append(buffer, bytes_received);
 
     size_t pos;
-    while (true) {
+    while (true)
+    {
         // Check if a full command (ending with "\r\n") is available
         pos = _clients[fd]->buffer.find("\r\n");
         if (pos == std::string::npos)
-            return; // Wait until the full command is received
+            return;  // Wait until the full command is received
 
         // Extract the command from the buffer
         std::string command = _clients[fd]->buffer.substr(0, pos);
 
         // Remove the processed command from the buffer
-        _clients[fd]->buffer.erase(0, pos + 2);  
+        _clients[fd]->buffer.erase(0, pos + 2);
 
         // Trim leading and trailing spaces
         command.erase(0, command.find_first_not_of(" \t"));
@@ -742,11 +741,9 @@ void Server::handleClientData(int fd) {
         processCommand(fd, command);
 
         // If the client was removed after command execution, stop processing
-        if (_clients.find(fd) == _clients.end())
-            break;
+        if (_clients.find(fd) == _clients.end()) break;
     }
 }
-
 
 /**
  * @brief Removes a client from the server.
@@ -769,52 +766,53 @@ void Server::removeClient(int fd)
 }
 
 /**
- * @brief Sends a message to all connected clients except the sender.
+ * @brief Broadcasts a message to all connected clients except the sender.
  *
  * This function iterates over the list of connected clients and sends
  * the provided message to each client except the one that sent it.
  *
- * Before sending, it checks:
- * - If the client is still in the `_clients` map (not disconnected).
- * - If the client's socket is present in `_poll_fds` and marked as `POLLOUT`
- * (ready for writing).
- * - If `send()` fails, the client is removed to prevent issues with broken
- * connections.
+ * If a client's socket buffer is full (send returns EWOULDBLOCK or EAGAIN),
+ * the function enables POLLOUT for the client, allowing the server to retry sending later.
+ * If send fails with any other error, the client is removed.
  *
- * @param message The message to be broadcast.
- * @param sender_fd The file descriptor of the sender (this client will not
- * receive the message).
+ * @param message The message to be broadcasted.
+ * @param sender_fd The file descriptor of the sender (this client will not receive the message).
  */
 void Server::broadcastMessage(const std::string& message, int sender_fd)
 {
     for (const auto& pair : _clients)
     {
         int client_fd = pair.first;
+        if (client_fd == sender_fd) continue;  // Do not send the message to the sender
 
-        // Skip the sender
-        if (client_fd == sender_fd) continue;
+        ssize_t bytes_sent = send(client_fd, message.c_str(), message.size(), 0);
 
-        // Check if client is still connected
-        if (_clients.find(client_fd) == _clients.end()) continue;
-
-        // Check if the client is ready for writing
-        auto it = std::find_if(_poll_fds.begin(), _poll_fds.end(),
-                               [client_fd](const struct pollfd& p)
-                               { return p.fd == client_fd; });
-
-        if (it != _poll_fds.end() && (it->revents & POLLOUT))
+        if (bytes_sent < 0)
         {
-            ssize_t bytes_sent =
-                send(client_fd, message.c_str(), message.size(), 0);
-            if (bytes_sent <= 0)
+            if (errno == EWOULDBLOCK || errno == EAGAIN)
             {
-                std::cerr << "Error sending message to client (fd: "
-                          << client_fd << "), removing client.\n";
+                // The buffer is full, enable POLLOUT for this client to retry sending later
+                for (size_t i = 0; i < _poll_fds.size(); ++i)
+                {
+                    if (_poll_fds[i].fd == client_fd)
+                    {
+                        _poll_fds[i].events |= POLLOUT;
+                        break;
+                    }
+                }
+                continue;
+            }
+            else
+            {
+                // If the error is not EWOULDBLOCK or EAGAIN, remove the client
+                std::cerr << "Error sending message to client (fd: " << client_fd << "), removing client.\n";
                 removeClient(client_fd);
             }
         }
     }
 }
+
+
 
 /**
  * @brief Processes a complete command received from a client.
