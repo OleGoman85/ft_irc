@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:42:09 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/20 07:38:17 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/01/31 09:59:04 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,11 @@ public:
      */
     Server(int port, const std::string& password);
     ~Server();
+
+    //добавила геттеры, чтобы потом сделать поля приватными
+    const std::string& getPassword() const;
+    std::map<int, std::unique_ptr<Client>>& getClients();
+    std::map<std::string, Channel>& getChannels();
 
     /**
      * @brief Runs the main server loop.

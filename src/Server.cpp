@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/30 17:03:16 by alisa            ###   ########.fr       */
+/*   Updated: 2025/01/31 10:01:10 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -511,6 +511,27 @@ Server::~Server()
 {
     if (_listen_fd != -1) close(_listen_fd);
 }
+
+
+
+// --- добавленные геттеры
+const std::string& Server::getPassword() const
+{
+    return _password;
+}
+
+std::map<int, std::unique_ptr<Client>>& Server::getClients()
+{
+    return _clients;
+}
+
+std::map<std::string, Channel>& Server::getChannels()
+{
+    return _channels;
+}
+// --- конец добавления
+
+
 
 /**
  * @brief Sets up the server socket.
