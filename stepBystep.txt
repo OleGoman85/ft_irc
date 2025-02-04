@@ -167,3 +167,24 @@ kak ja ponjal eto obolochka dlja irc. v teorii, esli u nas vse rabotaet s nc to 
 esli zapustit nc 127.0.0.1 6667 kak obicno to u nas tolko MODE stradaet, a tam vse sranno.
 
 mozew toze vvesti v pustom terminale irssi :)
+
+
+pass mypassword
+nick Alisa
+user Alisa 0 * :Alisa the Great
+join #cde
+
+
+
+pass mypassword
+nick Masha
+user Masha 0 * :Masha the Cat
+join #cde
+
+
+
+pass mypassword
+nick Oleg
+user Oleg 0 * :Oleg the Bold Guy
+join #cde
+

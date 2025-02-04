@@ -78,5 +78,5 @@ test:
 	@python3 tests/test_irc.py || echo "$(BRed)[❌] Tests failed!"
 
 # Rebuild everything and run tests
-re: fclean all test
+re: fclean all
 
