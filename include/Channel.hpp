@@ -3,42 +3,43 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:47:36 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/20 07:41:40 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/04 10:26:27 by aarbenin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
-
 
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
 
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
-#include <map>
 
 /**
  * @brief Represents an IRC channel.
  *
  * The Channel class encapsulates the state and functionality associated
- * with an IRC channel, including its name, topic, members, modes, and operator list.
+ * with an IRC channel, including its name, topic, members, modes, and operator
+ * list.
  */
-class Channel {
+class Channel
+{
 public:
     /**
      * @brief Constructs a new Channel object.
      *
      * Initializes the channel with the given name and default settings.
-     * The channel topic is set to an empty string, invite-only and topic-restricted modes are disabled,
-     * the channel key is empty, and the user limit is set to 0 (meaning no limit).
+     * The channel topic is set to an empty string, invite-only and
+     * topic-restricted modes are disabled, the channel key is empty, and the
+     * user limit is set to 0 (meaning no limit).
      *
      * @param name The name of the channel.
      */
     Channel(const std::string& name);
     ~Channel();
-
 
     /**
      * @brief Retrieves the channel name.
@@ -47,16 +48,15 @@ public:
      */
     std::string getName() const;
 
-
     /**
      * @brief Adds a client to the channel.
      *
-     * Adds the client (represented by its file descriptor) to the channel if the client is not already a member.
+     * Adds the client (represented by its file descriptor) to the channel if
+     * the client is not already a member.
      *
      * @param fd The file descriptor of the client to add.
      */
     void addClient(int fd);
-
 
     /**
      * @brief Removes a client from the channel.
@@ -67,7 +67,6 @@ public:
      */
     void removeClient(int fd);
 
-
     /**
      * @brief Checks if a client is a member of the channel.
      *
@@ -75,8 +74,7 @@ public:
      * @return true if the client is in the channel; false otherwise.
      */
     bool hasClient(int fd) const;
-    
-    
+
     /**
      * @brief Sets the channel topic.
      *
@@ -86,32 +84,33 @@ public:
      */
     void setTopic(const std::string& topic);
 
-
     /**
      * @brief Retrieves the current channel topic.
      *
      * @return The current topic of the channel.
      */
     std::string getTopic() const;
-    
-    
+
     /**
      * @brief Sets a mode for the channel.
      *
-     * Updates a specific mode flag for the channel, optionally using an additional parameter.
-     * Supported modes include:
+     * Updates a specific mode flag for the channel, optionally using an
+     * additional parameter. Supported modes include:
      * - 'i' : Invite-only mode.
      * - 't' : Topic restricted mode (only operators can change the topic).
-     * - 'k' : Channel key (password). When enabled, the parameter should contain the key.
-     * - 'l' : User limit. When enabled, the parameter should be a valid numeric string.
-     * - 'o' : Operator mode. Note: Operator management is performed via separate methods.
+     * - 'k' : Channel key (password). When enabled, the parameter should
+     * contain the key.
+     * - 'l' : User limit. When enabled, the parameter should be a valid numeric
+     * string.
+     * - 'o' : Operator mode. Note: Operator management is performed via
+     * separate methods.
      *
      * @param mode The mode character.
      * @param enable true to activate the mode, false to deactivate.
-     * @param param An optional parameter required for certain modes (default is an empty string).
+     * @param param An optional parameter required for certain modes (default is
+     * an empty string).
      */
     void setMode(char mode, bool enable, const std::string& param = "");
-
 
     /**
      * @brief Checks if a specific mode is active on the channel.
@@ -121,7 +120,6 @@ public:
      */
     bool hasMode(char mode) const;
 
-
     /**
      * @brief Retrieves the list of client file descriptors in the channel.
      *
@@ -129,27 +127,26 @@ public:
      */
     const std::vector<int>& getClients() const;
 
-
     /**
      * @brief Adds an operator to the channel.
      *
      * Grants operator status to the client with the given file descriptor.
      * If the client is already an operator, no action is taken.
      *
-     * @param fd The file descriptor of the client to be granted operator privileges.
+     * @param fd The file descriptor of the client to be granted operator
+     * privileges.
      */
     void addOperator(int fd);
-
 
     /**
      * @brief Removes an operator from the channel.
      *
      * Revokes operator status from the client with the given file descriptor.
      *
-     * @param fd The file descriptor of the client whose operator privileges are to be removed.
+     * @param fd The file descriptor of the client whose operator privileges are
+     * to be removed.
      */
     void removeOperator(int fd);
-
 
     /**
      * @brief Checks if a client is an operator in the channel.
@@ -159,50 +156,70 @@ public:
      */
     bool isOperator(int fd) const;
 
-
     /**
      * @brief Checks if the channel is in invite-only mode.
      *
      * @return true if invite-only mode is enabled; false otherwise.
      */
-    bool isInviteOnly() const { return _inviteOnly; }
-    
-    
+    bool isInviteOnly() const
+    {
+        return _inviteOnly;
+    }
+
     /**
      * @brief Checks if the channel has topic restrictions.
      *
-     * @return true if topic changes are restricted to operators; false otherwise.
+     * @return true if topic changes are restricted to operators; false
+     * otherwise.
      */
-    bool isTopicRestricted() const { return _topicRestricted; }
-    
-    
+    bool isTopicRestricted() const
+    {
+        return _topicRestricted;
+    }
+
     /**
      * @brief Retrieves the channel key.
      *
      * @return A constant reference to the channel key (password).
      */
-    const std::string& getChannelKey() const { return _channelKey; }
-    
-    
+    const std::string& getChannelKey() const
+    {
+        return _channelKey;
+    }
+
     /**
      * @brief Retrieves the user limit for the channel.
      *
-     * @return The maximum number of users allowed in the channel (0 if no limit).
+     * @return The maximum number of users allowed in the channel (0 if no
+     * limit).
      */
-    int getUserLimit() const { return _userLimit; }
+    int getUserLimit() const
+    {
+        return _userLimit;
+    }
+
+    void inviteClient(int fd);
+    bool isInvited(int fd) const;
+    void removeInvite(int fd);
 
 private:
-    std::string _name;             ///< The name of the channel.
-    std::vector<int> _clients;     ///< List of client file descriptors that are members of the channel.
-    std::string _topic;            ///< The topic of the channel.
-    std::map<char, bool> _modes;   ///< A mapping of mode characters to their enabled/disabled state.
+    std::string      _name;       ///< The name of the channel.
+    std::vector<int> _clients;    ///< List of client file descriptors that are
+                                  ///< members of the channel.
+    std::string          _topic;  ///< The topic of the channel.
+    std::map<char, bool> _modes;  ///< A mapping of mode characters to their
+                                  ///< enabled/disabled state.
 
     // Additional fields for modes:
-    bool _inviteOnly;              ///< Invite-only mode flag ('i').
-    bool _topicRestricted;         ///< Topic restriction flag ('t').
-    std::string _channelKey;       ///< Channel key (password) for mode 'k'.
-    std::vector<int> _operators;   ///< List of file descriptors for clients with operator privileges ('o').
-    int _userLimit;                ///< Maximum number of allowed users in the channel ('l', 0 means no limit).
+    bool             _inviteOnly;       ///< Invite-only mode flag ('i').
+    bool             _topicRestricted;  ///< Topic restriction flag ('t').
+    std::string      _channelKey;  ///< Channel key (password) for mode 'k'.
+    std::vector<int> _operators;  ///< List of file descriptors for clients with
+                                  ///< operator privileges ('o').
+    int _userLimit;  ///< Maximum number of allowed users in the channel ('l', 0
+                     ///< means no limit).
+
+    std::set<int> _invitedClients;
 };
 
-#endif // CHANNEL_HPP
+#endif  // CHANNEL_HPP
