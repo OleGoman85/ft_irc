@@ -395,8 +395,26 @@ void handleModeCommand(Server* server, int fd,
                     } else {
                         if (enable) {
                             channel.addOperator(targetFd);
-                        } else {
-                            channel.removeOperator(targetFd);
+                        } 
+                        else
+                        {
+                            if (channel.isOperator(targetFd))
+                            {
+                                int operatorCount = 0;
+                                for (int clientFd : channel.getClients())
+                                {
+                                    if (channel.isOperator(clientFd))
+                                        operatorCount++;
+                                }
+                                if (operatorCount > 1)
+                                    channel.removeOperator(targetFd);
+                                else
+                                {
+                                    std::string reply = "482 " + channelName + " :Cannot remove last operator\r\n";
+                                    send(fd, reply.c_str(), reply.size(), 0);
+                                    return;
+                                }
+                            }
                         }
                         appliedModes << 'o';
                         appliedParams.push_back(targetNick);

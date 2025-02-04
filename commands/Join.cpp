@@ -55,8 +55,21 @@ void handleJoinCommand(Server* server, int fd,
     // Extract the channel name from the command.
     std::string channelName = tokens[1];
 
+    // Ensure the channel name starts with '#'
+    if (channelName.empty() || channelName[0] != '#') {
+        std::string reply = "479 " + channelName + " :Illegal channel name. Channel names must start with '#'\r\n";
+        send(fd, reply.c_str(), reply.size(), 0);
+        return;
+    }
+
     // Look for the channel in the server's channel map.
     auto it = server->_channels.find(channelName);
+
+    if (it != server->_channels.end() && it->second.hasClient(fd)) {
+        std::string reply = "443 " + channelName + " :You are already in the channel\r\n";
+        send(fd, reply.c_str(), reply.size(), 0);
+        return;
+    }
 
     // Check if this is the first user to join the channel
     bool isFirstUser = (it == server->_channels.end());
@@ -123,10 +136,11 @@ void handleJoinCommand(Server* server, int fd,
     send(fd, welcomeMsg.c_str(), welcomeMsg.size(), 0);
 
     // Send list of users to the new client
-    std::string userList =
-        "353 " + server->_clients[fd]->nickname + " = " + channelName + " :";
-    for (int cli_fd : it->second.getClients())
-    {
+    std::string userList = "353 " + server->_clients[fd]->nickname + " = " + channelName + " :";
+    for (int cli_fd : it->second.getClients()) {
+        if (it->second.isOperator(cli_fd)) {
+            userList += "@";
+        }
         userList += server->_clients[cli_fd]->nickname + " ";
     }
     userList += "\r\n";

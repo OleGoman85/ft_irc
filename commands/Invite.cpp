@@ -9,7 +9,6 @@ void handleInviteCommand(Server* server, int fd,
                          const std::vector<std::string>& tokens,
                          const std::string& /*command*/)
 {
-    // 1️⃣ Проверка, что отправитель зарегистрирован
     if (server->_clients[fd]->authState != AUTH_REGISTERED)
     {
         std::string reply = "451 :You have not registered\r\n";
@@ -17,7 +16,6 @@ void handleInviteCommand(Server* server, int fd,
         return;
     }
 
-    // 2️⃣ Проверка достаточного количества аргументов
     if (tokens.size() < 3)
     {
         std::string reply = "461 INVITE :Not enough parameters\r\n";
@@ -28,7 +26,6 @@ void handleInviteCommand(Server* server, int fd,
     std::string targetNick  = tokens[1];
     std::string channelName = tokens[2];
 
-    // 3️⃣ Проверяем, существует ли канал
     auto it = server->_channels.find(channelName);
     if (it == server->_channels.end())
     {
@@ -39,7 +36,6 @@ void handleInviteCommand(Server* server, int fd,
 
     Channel& channel = it->second;
 
-    // 4️⃣ Проверяем, состоит ли отправитель в канале
     if (!channel.hasClient(fd))
     {
         std::string reply =
@@ -48,7 +44,6 @@ void handleInviteCommand(Server* server, int fd,
         return;
     }
 
-    // 5️⃣ Проверяем, оператор ли отправитель (если канал invite-only)
     if (channel.isInviteOnly() && !channel.isOperator(fd))
     {
         std::string reply =
@@ -57,7 +52,6 @@ void handleInviteCommand(Server* server, int fd,
         return;
     }
 
-    // 6️⃣ Проверяем, существует ли целевой пользователь
     int targetFd = -1;
     for (const auto& pair : server->_clients)
     {
@@ -74,7 +68,6 @@ void handleInviteCommand(Server* server, int fd,
         return;
     }
 
-    // 7️⃣ Проверяем, не находится ли уже приглашённый в канале
     if (channel.hasClient(targetFd))
     {
         std::string reply = "443 " + targetNick + " " + channelName +
@@ -83,16 +76,13 @@ void handleInviteCommand(Server* server, int fd,
         return;
     }
 
-    // 8️⃣ Добавляем в список приглашённых
     channel.inviteClient(targetFd);
 
-    // 9️⃣ Отправляем подтверждение отправителю
     std::string senderNick = server->_clients[fd]->nickname;
     std::string reply =
         "341 " + senderNick + " " + targetNick + " " + channelName + "\r\n";
     send(fd, reply.c_str(), reply.size(), 0);
 
-    // 🔟 Отправляем приглашение пользователю
     std::string inviteMsg = ":" + senderNick + " INVITE " + targetNick + " :" +
                             channelName + "\r\n";
     send(targetFd, inviteMsg.c_str(), inviteMsg.size(), 0);
