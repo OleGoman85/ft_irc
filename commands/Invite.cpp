@@ -80,14 +80,11 @@ void handleInviteCommand(Server* server, int fd,
                          const std::vector<std::string>& tokens,
                          const std::string& /*command*/)
 {
-    // 1) Check registration
     if (server->_clients[fd]->authState != AUTH_REGISTERED)
     {
         send(fd, "451 :You have not registered\r\n", 30, 0);
         return;
     }
-
-    // 2) Check parameters
     if (tokens.size() < 3)
     {
         send(fd, "461 INVITE :Not enough parameters\r\n", 36, 0);
@@ -97,14 +94,11 @@ void handleInviteCommand(Server* server, int fd,
     std::string targetNick  = tokens[1];
     std::string channelName = tokens[2];
 
-    // 3) Find user & channel (no errors sent here)
     auto [targetFd, channel] =
         findUserAndChannel(server, targetNick, channelName);
 
-    // We'll collect all errors in a flag
     bool hasErrors = false;
 
-    // 4) Check if channel exists
     if (!channel)
     {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
@@ -112,7 +106,6 @@ void handleInviteCommand(Server* server, int fd,
         hasErrors = true;
     }
 
-    // 5) Check if user exists
     if (targetFd == -1)
     {
         std::string reply = "401 " + targetNick + " :No such nick/channel\r\n";
@@ -120,26 +113,21 @@ void handleInviteCommand(Server* server, int fd,
         hasErrors = true;
     }
 
-    // 6) Check for self-invite
     if (server->_clients[fd]->nickname == targetNick)
     {
         send(fd, "481 :You cannot invite yourself\r\n", 33, 0);
         hasErrors = true;
     }
 
-    // If we already have errors, stop here
     if (hasErrors) return;
 
-    // 7) Now we can check operator privileges
     if (!canUserInvite(fd, channel, channelName)) return;
 
-    // 8) Everything is ok, do invite
     processInvite(server, fd, targetFd, channel, targetNick, channelName);
 }
 
 // Успела протестировать в INVITE:
-// ответы сверяла с протоколом RFC 2812 и результатами тестов на Libera.Chat 
-
+// ответы сверяла с протоколом RFC 2812 и результатами тестов на Libera.Chat
 
 // Позитивные тесты
 // ✅ Обычное приглашение: оператор приглашает пользователя, который не в
@@ -185,13 +173,12 @@ void handleInviteCommand(Server* server, int fd,
 //    INVITE Alisa #cde, если приглашающий не в канале → 442 #cde :You're not on
 //    that channel.
 // ❌ Самоприглашение в несуществующий канал
-//    INVITE Alisa #sdf 
-//    → 403 #sdf :No such channel 
+//    INVITE Alisa #sdf
+//    → 403 #sdf :No such channel
 //    → 481 :You cannot invite yourself.
 
-
-
-//!! проблема с приглашением несуществующего пользователя, не находясь в канале INVITE sdfsdf #cde
-//ожидаемый ответ:  442 #cde :You're not on that channel
-//                  401 sdfsdf :No such nick/channel
-//наш ответ:    401 sdfsdf :No such nick/channel
+//!! проблема с приглашением несуществующего пользователя, не находясь в канале
+//!INVITE sdfsdf #cde
+// ожидаемый ответ:  442 #cde :You're not on that channel
+//                   401 sdfsdf :No such nick/channel
+// наш ответ:    401 sdfsdf :No such nick/channel
