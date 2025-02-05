@@ -1,14 +1,16 @@
 #include "Invite.hpp"
 
 #include <string>
+
 #include "../include/Channel.hpp"
 #include "../include/Server.hpp"
 
 /**
  * @brief Returns (targetFd, channel*) without sending any errors.
  */
-std::pair<int, Channel*> findUserAndChannel(
-    Server* server, const std::string& targetNick, const std::string& channelName)
+std::pair<int, Channel*> findUserAndChannel(Server*            server,
+                                            const std::string& targetNick,
+                                            const std::string& channelName)
 {
     int targetFd = -1;
     for (const auto& pair : server->_clients)
@@ -20,7 +22,7 @@ std::pair<int, Channel*> findUserAndChannel(
         }
     }
 
-    auto it = server->_channels.find(channelName);
+    auto     it      = server->_channels.find(channelName);
     Channel* channel = (it != server->_channels.end()) ? &it->second : nullptr;
 
     return {targetFd, channel};
@@ -28,21 +30,33 @@ std::pair<int, Channel*> findUserAndChannel(
 
 bool canUserInvite(int fd, Channel* channel, const std::string& channelName)
 {
-    if (!channel->isOperator(fd))
+    if (!channel->hasClient(fd))
     {
-        std::string reply = "482 " + channelName + " :You're not a channel operator\r\n";
+        std::string reply =
+            "442 " + channelName + " :You're not on that channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return false;
     }
+
+    if (!channel->isOperator(fd))
+    {
+        std::string reply =
+            "482 " + channelName + " :You're not a channel operator\r\n";
+        send(fd, reply.c_str(), reply.size(), 0);
+        return false;
+    }
+
     return true;
 }
 
 void processInvite(Server* server, int fd, int targetFd, Channel* channel,
-                   const std::string& targetNick, const std::string& channelName)
+                   const std::string& targetNick,
+                   const std::string& channelName)
 {
     if (channel->hasClient(targetFd))
     {
-        std::string reply = "443 " + targetNick + " " + channelName + " :is already on channel\r\n";
+        std::string reply = "443 " + targetNick + " " + channelName +
+                            " :is already on channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
@@ -59,7 +73,8 @@ void processInvite(Server* server, int fd, int targetFd, Channel* channel,
 }
 
 /**
- * @brief Handles the INVITE command, sending *all* relevant errors if multiple issues are found.
+ * @brief Handles the INVITE command, sending *all* relevant errors if multiple
+ * issues are found.
  */
 void handleInviteCommand(Server* server, int fd,
                          const std::vector<std::string>& tokens,
@@ -83,7 +98,8 @@ void handleInviteCommand(Server* server, int fd,
     std::string channelName = tokens[2];
 
     // 3) Find user & channel (no errors sent here)
-    auto [targetFd, channel] = findUserAndChannel(server, targetNick, channelName);
+    auto [targetFd, channel] =
+        findUserAndChannel(server, targetNick, channelName);
 
     // We'll collect all errors in a flag
     bool hasErrors = false;
@@ -112,19 +128,18 @@ void handleInviteCommand(Server* server, int fd,
     }
 
     // If we already have errors, stop here
-    if (hasErrors)
-        return;
+    if (hasErrors) return;
 
     // 7) Now we can check operator privileges
-    if (!canUserInvite(fd, channel, channelName))
-        return;
+    if (!canUserInvite(fd, channel, channelName)) return;
 
     // 8) Everything is ok, do invite
     processInvite(server, fd, targetFd, channel, targetNick, channelName);
 }
 
+// Успела протестировать в INVITE:
+// ответы сверяла с протоколом RFC 2812 и результатами тестов на Libera.Chat 
 
-// Протестировано в INVITE:
 
 // Позитивные тесты
 // ✅ Обычное приглашение: оператор приглашает пользователя, который не в
@@ -163,8 +178,20 @@ void handleInviteCommand(Server* server, int fd,
 //    INVITE Alisa #cde → JOIN Alisa #cde → PART Alisa #cde
 //    Повторный JOIN без нового инвайта → 473 #cde :Cannot join channel (+i mode
 //    set).
+// ❌ Проверка, что оператор теряет +o при выходе
+//    JOIN #cde → оператор выходит (PART/QUIT) → повторный JOIN → операторский
+//    статус сбрасывается.
+// ❌ Попытка пригласить, если пользователь не находится в канале
+//    INVITE Alisa #cde, если приглашающий не в канале → 442 #cde :You're not on
+//    that channel.
+// ❌ Самоприглашение в несуществующий канал
+//    INVITE Alisa #sdf 
+//    → 403 #sdf :No such channel 
+//    → 481 :You cannot invite yourself.
 
-// ⚠️ из непонятного пока - самоприглашение в несуществующий канал. Сейчас
-// приходит только 481 :You cannot invite yourself. Смотрела, правила толком это
-// дело не регламентируют, но для консистентности можно возвращать коды обеих
-// ошибок. или можно ничего не делать. Даже интересно, что мы выберем? 🤔
+
+
+//!! проблема с приглашением несуществующего пользователя, не находясь в канале INVITE sdfsdf #cde
+//ожидаемый ответ:  442 #cde :You're not on that channel
+//                  401 sdfsdf :No such nick/channel
+//наш ответ:    401 sdfsdf :No such nick/channel

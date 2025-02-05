@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/04 15:38:14 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/05 13:58:39 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ void Channel::addClient(int fd)
  * @brief Removes a client from the channel.
  *
  * Iterates over the _clients vector and removes the client with the given file
- * descriptor.
+ * descriptor. removes operator status
  *
  * @param fd The file descriptor of the client to be removed.
  */
@@ -85,7 +85,9 @@ void Channel::removeClient(int fd)
             break;
         }
     }
+    removeOperator(fd);
 }
+
 
 /**
  * @brief Checks if a client is present in the channel.
