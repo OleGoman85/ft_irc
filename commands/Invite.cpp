@@ -9,7 +9,7 @@ void handleInviteCommand(Server* server, int fd,
                          const std::vector<std::string>& tokens,
                          const std::string& /*command*/)
 {
-    if (server->_clients[fd]->authState != AUTH_REGISTERED)
+    if (server->getClients()[fd]->authState != AUTH_REGISTERED)
     {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -26,8 +26,8 @@ void handleInviteCommand(Server* server, int fd,
     std::string targetNick  = tokens[1];
     std::string channelName = tokens[2];
 
-    auto it = server->_channels.find(channelName);
-    if (it == server->_channels.end())
+    auto it = server->getChannels().find(channelName);
+    if (it == server->getChannels().end())
     {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -53,9 +53,9 @@ void handleInviteCommand(Server* server, int fd,
     }
 
     int targetFd = -1;
-    for (const auto& pair : server->_clients)
+    for (const auto& pair : server->getClients())
     {
-        if (pair.second->nickname == targetNick)
+        if (pair.second->getNickname() == targetNick)
         {
             targetFd = pair.first;
             break;
@@ -78,7 +78,7 @@ void handleInviteCommand(Server* server, int fd,
 
     channel.inviteClient(targetFd);
 
-    std::string senderNick = server->_clients[fd]->nickname;
+    std::string senderNick = server->getClients()[fd]->getNickname();
     std::string reply =
         "341 " + senderNick + " " + targetNick + " " + channelName + "\r\n";
     send(fd, reply.c_str(), reply.size(), 0);

@@ -235,7 +235,7 @@ void handleModeCommand(Server* server, int fd,
     (void)rawCommand; // unused in this example, but could parse trailing text
 
     // 1️ Check if client is registered
-    if (server->_clients[fd]->authState != AUTH_REGISTERED) {
+    if (server->getClients()[fd]->authState != AUTH_REGISTERED) {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -251,8 +251,8 @@ void handleModeCommand(Server* server, int fd,
     std::string channelName = tokens[1];
 
     // 3️ Find the channel or error
-    auto it = server->_channels.find(channelName);
-    if (it == server->_channels.end()) {
+    auto it = server->getChannels().find(channelName);
+    if (it == server->getChannels().end()) {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -281,7 +281,7 @@ void handleModeCommand(Server* server, int fd,
 
         // We might also want to show arguments (key, limit, etc.)
         // e.g. :server 324 <nick> <channel> <modes> [key or limit]
-        std::string reply = "324 " + server->_clients[fd]->nickname + " " +
+        std::string reply = "324 " + server->getClients()[fd]->getNickname() + " " +
                             channelName + " " + modes;
         if (channel.hasMode('k')) {
             reply += " " + channel.getChannelKey();
@@ -383,8 +383,8 @@ void handleModeCommand(Server* server, int fd,
                     std::string targetNick = tokens[paramIndex++];
                     // find the client's fd
                     int targetFd = -1;
-                    for (auto& pair : server->_clients) {
-                        if (pair.second->nickname == targetNick) {
+                    for (auto& pair : server->getClients()) {
+                        if (pair.second->getNickname() == targetNick) {
                             targetFd = pair.first;
                             break;
                         }
@@ -437,7 +437,7 @@ void handleModeCommand(Server* server, int fd,
     // 8️ Build the final broadcast string
     // e.g. ":Alice MODE #chan +ik secret"
     std::ostringstream broadcast;
-    broadcast << ":" << server->_clients[fd]->nickname
+    broadcast << ":" << server->getClients()[fd]->getNickname()
               << " MODE " << channelName << " "
               << appliedModes.str();
 

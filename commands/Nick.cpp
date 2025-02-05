@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 11:30:54 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/20 12:28:27 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 12:54:17 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,9 @@ void handleNickCommand(Server* server, int fd, const std::vector<std::string>& t
     std::string newNick = tokens[1];
 
     // Check if the nickname is already in use by another client.
-    for (const auto& pair : server->_clients) 
+    for (const auto& pair : server->getClients()) 
     {
-        if (pair.second->nickname == newNick) {
+        if (pair.second->getNickname() == newNick) {
             std::string reply = "433 * " + newNick + " :Nickname is already in use\r\n";
             send(fd, reply.c_str(), reply.size(), 0);
             return;
@@ -51,18 +51,18 @@ void handleNickCommand(Server* server, int fd, const std::vector<std::string>& t
     }
 
     // Set the new nickname for the client.
-    server->_clients[fd]->nickname = newNick;
+    server->getClients()[fd]->setNickname(newNick);
 
     // Update the client's authentication state.
     // If the client was waiting for the USER command, mark them as fully registered.
     // Otherwise, if the client was just waiting for a nickname, update the state to waiting for USER.
-    if (server->_clients[fd]->authState == WAITING_FOR_USER)
-        server->_clients[fd]->authState = AUTH_REGISTERED;
-    else if (server->_clients[fd]->authState == WAITING_FOR_NICK)
-        server->_clients[fd]->authState = WAITING_FOR_USER;
+    if (server->getClients()[fd]->authState == WAITING_FOR_USER)
+        server->getClients()[fd]->authState = AUTH_REGISTERED;
+    else if (server->getClients()[fd]->authState == WAITING_FOR_NICK)
+        server->getClients()[fd]->authState = WAITING_FOR_USER;
     
     // Send a confirmation response to the client indicating successful nickname setting.
-    std::string reply = "001 " + newNick + " :Nickname set successfully\r\n";
+    std::string reply = "001 " + server->getClients()[fd]->getNickname() + " :Nickname set successfully\r\n";
     send(fd, reply.c_str(), reply.size(), 0);
 }
 

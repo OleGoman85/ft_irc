@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:42:09 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/20 07:38:17 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 12:39:00 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,16 +74,35 @@ public:
      */
     void broadcastMessage(const std::string& message, int sender_fd);
 
-    // Public fields for easier access in command handlers.
+        /**
+     * @brief Returns current server password (read-only).
+     */
+    const std::string& getPassword() const;
 
-    std::string _password;                         ///< The connection password for the server.
-    std::map<int, std::unique_ptr<Client>> _clients; ///< Map of client file descriptors to Client objects.
-    std::map<std::string, Channel> _channels;        ///< Map of channel names to Channel objects.
+    /**
+     * @brief Changes the server password.
+     */
+    void setPassword(const std::string& newPassword);
+
+    /**
+     * @brief Returns the map of all connected clients.
+     */
+    std::map<int, std::unique_ptr<Client>>& getClients();
+
+    /**
+     * @brief Returns the map of all channels.
+     */
+    std::map<std::string, Channel>& getChannels();
+
 
 private:
     int _port;                     ///< The port number on which the server listens.
     int _listen_fd;                ///< The listening socket file descriptor.
     std::vector<struct pollfd> _poll_fds; ///< Vector of poll descriptors for the server and client sockets.
+    
+    std::string _password;                         ///< The connection password for the server.
+    std::map<int, std::unique_ptr<Client>> _clients; ///< Map of client file descriptors to Client objects.
+    std::map<std::string, Channel> _channels;        ///< Map of channel names to Channel objects.
 
     /**
      * @brief Sets up the server's listening socket.
