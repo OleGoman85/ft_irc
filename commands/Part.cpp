@@ -34,6 +34,21 @@ void handlePartCommand(Server* server, int fd, const std::vector<std::string>& t
         return;
     }
 
+    // Check: if user is last operator, disable exit
+    if (it->second.isOperator(fd)) {
+        int operatorCount = 0;
+        for (int clientFd : it->second.getClients()) {
+            if (it->second.isOperator(clientFd))
+                operatorCount++;
+        }
+
+        if (operatorCount == 1) {
+            std::string reply = "482 " + channelName + " :Cannot leave, you are the last operator\r\n";
+            send(fd, reply.c_str(), reply.size(), 0);
+            return;
+        }
+    }
+
     // Check if a part message was provided; if not, use the default "Leaving" message
     std::string partMessage = tokens.size() > 2 ? tokens[2] : "Leaving";
 

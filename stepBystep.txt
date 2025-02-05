@@ -150,23 +150,12 @@ MODE #channel +o someNick – назначить оператора
 
 
 
-privet.
-ja segodnja slomal golovu, peredaju estafetu tebe :D ..... sdelal melkie izminenija i to chto est, u nas rabotaet, noooo....
 
 zapusti server  ./ircserv port 123    ili    ./ircserv 6667 123
 
 v drugom zajdi v tuze papku gde ircserv i ot uda vvedi
 irssi -c localhost -p 6667 -w 123
 
-i budet tebe schaste....
-
-ah da, nooooo ja ochen slabo ponimaju, kak tam rabotat!
-
-kak ja ponjal eto obolochka dlja irc. v teorii, esli u nas vse rabotaet s nc to i tam dolzno rabotat i vrode daze rabotaet (vrode, daze, ne ponimaju)
-
-esli zapustit nc 127.0.0.1 6667 kak obicno to u nas tolko MODE stradaet, a tam vse sranno.
-
-mozew toze vvesti v pustom terminale irssi :)
 
 
 pass mypassword
@@ -188,3 +177,48 @@ nick Oleg
 user Oleg 0 * :Oleg the Bold Guy
 join #cde
 
+
+
+451 - You have not registered
+461 - Not enough parameters
+464 - Password incorrect 
+403 - No such channel 
+401 - No such nick/channel
+433 - Nickname is already in use
+431 - No nickname given 
+442 - You're not on that channel 
+443 - You are already in the channel 
+473 - Cannot join channel (+i mode set)
+471 - Channel is full
+479 - Illegal channel name
+482 - You're not a channel operator
+482 - Cannot remove last operator
+421 - Unknown command
+331 - No topic is set
+332 - Topic information
+
+
+
+001 - RPL_WELCOME
+→ "001 <nickname> :Welcome to the IRC server"
+
+341 - RPL_INVITING
+→ "341 <senderNick> <targetNick> <channelName>"
+
+324 - RPL_CHANNELMODEIS 
+→ "324 <nickname> <channelName> <modes>"
+
+353 - RPL_NAMREPLY
+→ "353 <nickname> = <channelName> :<users_list>"
+
+001 - Password accepted
+→ "001 :Password accepted"
+
+001 - User information set successfully
+→ "001 <nickname> :User information set successfully"
+
+332 - RPL_TOPIC
+→ "332 <nickname> <channelName> :<topic>"
+
+341 - Invite sent
+→ "341 <senderNick> <targetNick> <channelName>"
