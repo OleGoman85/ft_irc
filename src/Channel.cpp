@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/04 12:12:02 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/04 15:38:14 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -266,3 +266,4 @@ void Channel::removeInvite(int fd)
 {
     _invitedClients.erase(fd);
 }
+
