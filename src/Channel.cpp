@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
+/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/05 13:58:39 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/06 11:44:58 by aarbenin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,6 @@ void Channel::removeClient(int fd)
     }
     removeOperator(fd);
 }
-
 
 /**
  * @brief Checks if a client is present in the channel.
@@ -268,4 +267,3 @@ void Channel::removeInvite(int fd)
 {
     _invitedClients.erase(fd);
 }
-
