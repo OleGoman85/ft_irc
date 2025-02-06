@@ -243,7 +243,7 @@ void handleModeCommand(
                 std::string err = "472 " + server->getClients()[fd]->getNickname()
                                   + " " + c + " :is unknown mode char to me\r\n";
                 send(fd, err.c_str(), err.size(), 0);
-                continue;
+                continue; 
             }
         }
         changes.push_back(change);
