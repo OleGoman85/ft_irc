@@ -68,8 +68,10 @@ void handleJoinCommand(Server* server, int fd,
     // Look for the channel in the server's channel map.
     auto it = server->getChannels().find(channelName);
 
-    if (it != server->getChannels().end() && it->second.hasClient(fd)) {
-        std::string reply = "443 " + channelName + " :You are already in the channel\r\n";
+    if (it != server->getChannels().end() && it->second.hasClient(fd))
+    {
+        std::string reply =
+            "443 " + channelName + " :You are already in the channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
@@ -113,7 +115,16 @@ void handleJoinCommand(Server* server, int fd,
     }
 
     // (Optional) If the channel has a key (mode 'k') set, the key should be
-    // verified here.
+    if (it->second.hasMode('k'))
+    {
+        if (tokens.size() < 3 || it->second.getChannelKey() != tokens[2])
+        {
+            std::string reply = "475 " + channelName +
+                                " :Cannot join channel (+k mode set)\r\n";
+            send(fd, reply.c_str(), reply.size(), 0);
+            return;
+        }
+    }
 
     // Add the client to the channel.
     it->second.addClient(fd);
@@ -125,8 +136,8 @@ void handleJoinCommand(Server* server, int fd,
     if (isFirstUser)
     {
         it->second.addOperator(fd);
-        std::string opMsg = ":" + server->getClients()[fd]->getNickname() + " MODE " +
-                            channelName + " +o " +
+        std::string opMsg = ":" + server->getClients()[fd]->getNickname() +
+                            " MODE " + channelName + " +o " +
                             server->getClients()[fd]->getNickname() + "\r\n";
         send(fd, opMsg.c_str(), opMsg.size(), 0);
     }
@@ -142,9 +153,12 @@ void handleJoinCommand(Server* server, int fd,
     send(fd, welcomeMsg.c_str(), welcomeMsg.size(), 0);
 
     // Send list of users to the new client
-    std::string userList = "353 " + server->getClients()[fd]->getNickname() + " = " + channelName + " :";
-    for (int cli_fd : it->second.getClients()) {
-        if (it->second.isOperator(cli_fd)) {
+    std::string userList = "353 " + server->getClients()[fd]->getNickname() +
+                           " = " + channelName + " :";
+    for (int cli_fd : it->second.getClients())
+    {
+        if (it->second.isOperator(cli_fd))
+        {
             userList += "@";
         }
         userList += server->getClients()[cli_fd]->getNickname() + " ";
@@ -153,16 +167,16 @@ void handleJoinCommand(Server* server, int fd,
     send(fd, userList.c_str(), userList.size(), 0);
 
     // Send JOIN confirmation to the new client
-    std::string joinMsg =
-        ":" + server->getClients()[fd]->getNickname() + " JOIN " + channelName + "\r\n";
+    std::string joinMsg = ":" + server->getClients()[fd]->getNickname() +
+                          " JOIN " + channelName + "\r\n";
     send(fd, joinMsg.c_str(), joinMsg.size(), 0);
 
     // Send channel topic if it is set
     if (!it->second.getTopic().empty())
     {
-        std::string topicMsg = "332 " + server->getClients()[fd]->getNickname() + " " +
-                               channelName + " :" + it->second.getTopic() +
-                               "\r\n";
+        std::string topicMsg =
+            "332 " + server->getClients()[fd]->getNickname() + " " +
+            channelName + " :" + it->second.getTopic() + "\r\n";
         send(fd, topicMsg.c_str(), topicMsg.size(), 0);
     }
 
