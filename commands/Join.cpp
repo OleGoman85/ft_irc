@@ -56,8 +56,11 @@ void handleJoinCommand(Server* server, int fd,
     std::string channelName = tokens[1];
 
     // Ensure the channel name starts with '#'
-    if (channelName.empty() || channelName[0] != '#') {
-        std::string reply = "479 " + channelName + " :Illegal channel name. Channel names must start with '#'\r\n";
+    if (channelName.empty() || channelName[0] != '#')
+    {
+        std::string reply =
+            "479 " + channelName +
+            " :Illegal channel name. Channel names must start with '#'\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
@@ -114,7 +117,10 @@ void handleJoinCommand(Server* server, int fd,
 
     // Add the client to the channel.
     it->second.addClient(fd);
-
+    if (it->second.isInvited(fd))
+    {
+        it->second.removeInvite(fd);
+    }
     // If this is the first user, assign them as an operator.
     if (isFirstUser)
     {
