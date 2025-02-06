@@ -35,17 +35,22 @@ void handlePartCommand(Server* server, int fd, const std::vector<std::string>& t
     }
 
     // Check: if user is last operator, disable exit
-    if (it->second.isOperator(fd)) {
-        int operatorCount = 0;
-        for (int clientFd : it->second.getClients()) {
-            if (it->second.isOperator(clientFd))
-                operatorCount++;
-        }
+    if (it->second.isOperator(fd))
+    {
+        size_t totalUsers = it->second.getClients().size(); //count users in channel
+        if (totalUsers > 1)
+        {
+            int operatorCount = 0;
+            for (int clientFd : it->second.getClients()) {
+                if (it->second.isOperator(clientFd))
+                    operatorCount++;
+            }
 
-        if (operatorCount == 1) {
-            std::string reply = "482 " + channelName + " :Cannot leave, you are the last operator\r\n";
-            send(fd, reply.c_str(), reply.size(), 0);
-            return;
+            if (operatorCount == 1) {
+                std::string reply = "482 " + channelName + " :Cannot leave, you are the last operator\r\n";
+                send(fd, reply.c_str(), reply.size(), 0);
+                return;
+            }
         }
     }
 
