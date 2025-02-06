@@ -4,7 +4,7 @@
 
 void handlePartCommand(Server* server, int fd, const std::vector<std::string>& tokens, const std::string& /*command*/) {
     // Check if the client is fully registered
-    if (server->_clients[fd]->authState != AUTH_REGISTERED) {
+    if (server->getClients()[fd]->authState != AUTH_REGISTERED) {
         std::string reply = "451 :You have not registered\r\n"; // Error: Client not registered
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -20,8 +20,8 @@ void handlePartCommand(Server* server, int fd, const std::vector<std::string>& t
     std::string channelName = tokens[1]; // Extract the channel name from the command
 
     // Find the channel in the server's channel map
-    auto it = server->_channels.find(channelName);
-    if (it == server->_channels.end()) {
+    auto it = server->getChannels() .find(channelName);
+    if (it == server->getChannels() .end()) {
         std::string reply = "403 " + channelName + " :No such channel\r\n"; // Error: Channel does not exist
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -35,17 +35,22 @@ void handlePartCommand(Server* server, int fd, const std::vector<std::string>& t
     }
 
     // Check: if user is last operator, disable exit
-    if (it->second.isOperator(fd)) {
-        int operatorCount = 0;
-        for (int clientFd : it->second.getClients()) {
-            if (it->second.isOperator(clientFd))
-                operatorCount++;
-        }
+    if (it->second.isOperator(fd))
+    {
+        size_t totalUsers = it->second.getClients().size(); //count users in channel
+        if (totalUsers > 1)
+        {
+            int operatorCount = 0;
+            for (int clientFd : it->second.getClients()) {
+                if (it->second.isOperator(clientFd))
+                    operatorCount++;
+            }
 
-        if (operatorCount == 1) {
-            std::string reply = "482 " + channelName + " :Cannot leave, you are the last operator\r\n";
-            send(fd, reply.c_str(), reply.size(), 0);
-            return;
+            if (operatorCount == 1) {
+                std::string reply = "482 " + channelName + " :Cannot leave, you are the last operator\r\n";
+                send(fd, reply.c_str(), reply.size(), 0);
+                return;
+            }
         }
     }
 
@@ -53,7 +58,7 @@ void handlePartCommand(Server* server, int fd, const std::vector<std::string>& t
     std::string partMessage = tokens.size() > 2 ? tokens[2] : "Leaving";
 
     // Construct the PART message to be broadcast to all channel members
-    std::string fullPartMessage = ":" + server->_clients[fd]->nickname + " PART " + channelName + " :" + partMessage + "\r\n";
+    std::string fullPartMessage = ":" + server->getClients()[fd]->getNickname() + " PART " + channelName + " :" + partMessage + "\r\n";
 
     // Notify all clients in the channel about the PART event
     for (int cli_fd : it->second.getClients()) {
@@ -65,6 +70,6 @@ void handlePartCommand(Server* server, int fd, const std::vector<std::string>& t
 
     // If the channel becomes empty after the client leaves, delete the channel
     if (it->second.getClients().empty()) {
-        server->_channels.erase(it); // Remove the channel from the server
+        server->getChannels() .erase(it); // Remove the channel from the server
     }
 }

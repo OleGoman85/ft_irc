@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/16 09:47:43 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 09:42:33 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,14 +48,19 @@ public:
      */
     int getFd() const;
 
-private:
-    int _fd; ///< File descriptor for the client socket.
+    std::string getNickname() const;
+    void setNickname(const std::string& newNickname);
 
-public:
-    std::string nickname; ///< Client's nickname.
-    std::string username; ///< Client's username.
+    std::string getUsername() const;
+    void setUsername(const std::string& newUsername);
+    
     std::string buffer;   ///< Buffer for storing incoming data.
     AuthState authState;  ///< Current authentication state of the client.
+
+private:
+    int _fd; ///< File descriptor for the client socket.
+    std::string _nickname; ///< Client's nickname 
+    std::string _username; ///< Client's username 
 };
 
 #endif // CLIENT_HPP

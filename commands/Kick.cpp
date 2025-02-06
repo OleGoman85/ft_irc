@@ -27,7 +27,7 @@ void handleKickCommand(Server* server, int fd,
                        const std::string& /*command*/)
 {
     // Check if the client (sender) is fully registered.
-    if (server->_clients[fd]->authState != AUTH_REGISTERED)
+    if (server->getClients()[fd]->authState != AUTH_REGISTERED)
     {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -46,8 +46,8 @@ void handleKickCommand(Server* server, int fd,
     std::string targetNick  = tokens[2];
 
     // Find the specified channel.
-    auto it = server->_channels.find(channelName);
-    if (it == server->_channels.end())
+    auto it = server->getChannels().find(channelName);
+    if (it == server->getChannels().end())
     {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -58,22 +58,22 @@ void handleKickCommand(Server* server, int fd,
     // Search for the target user in the channel.
     for (int cli_fd : it->second.getClients())
     {
-        auto clientIt = server->_clients.find(cli_fd);
-        if (clientIt == server->_clients.end())
+        auto clientIt = server->getClients().find(cli_fd);
+        if (clientIt == server->getClients().end())
         {
             continue;  // Skip if the client is no longer there
         }
 
-        if (clientIt->second->nickname == targetNick)
+        if (clientIt->second->getNickname() == targetNick)
         {
             it->second.removeClient(cli_fd);
             if (it->second.getClients().empty())
             {
-                server->_channels.erase(
+                server->getChannels().erase(
                     it);  // Delete the channel if it is empty
             }
 
-            std::string kickMsg = ":" + server->_clients[fd]->nickname +
+            std::string kickMsg = ":" + server->getClients()[fd]->getNickname() +
                                   " KICK " + channelName + " " + targetNick +
                                   " :Kicked\r\n";
             server->broadcastMessage(kickMsg, fd);

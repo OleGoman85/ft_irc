@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 10:44:47 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/16 10:00:58 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 13:03:55 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,14 @@
  */
 void handleQuitCommand(Server* server, int fd, const std::vector<std::string>& /*tokens*/, const std::string& /*command*/) {
     // Check if the client exists in the server's client map.
-    if (server->_clients.find(fd) == server->_clients.end())
+    if (server->getClients().find(fd) == server->getClients().end())
         return;
     
     // Construct the QUIT message with the client's nickname.
-    std::string quitMsg = ":" + server->_clients[fd]->nickname + " QUIT :Client has quit\r\n";
+    std::string quitMsg = ":" + server->getClients()[fd]->getNickname() + " QUIT :Client has quit\r\n";
     
     // Send the QUIT message to all other connected clients.
-    for (const auto& pair : server->_clients) {
+    for (const auto& pair : server->getClients()) {
         if (pair.first != fd)
             send(pair.first, quitMsg.c_str(), quitMsg.size(), 0);
     }

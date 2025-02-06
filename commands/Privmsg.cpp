@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 12:31:16 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/27 09:34:53 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 13:03:07 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@
  */
 void handlePrivmsgCommand(Server* server, int fd, const std::vector<std::string>& tokens, const std::string& command) {
     // Check if the client is fully registered.
-    if (server->_clients[fd]->authState != AUTH_REGISTERED) 
+    if (server->getClients()[fd]->authState != AUTH_REGISTERED) 
     {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -56,8 +56,8 @@ void handlePrivmsgCommand(Server* server, int fd, const std::vector<std::string>
     
     // If the target is a channel (starts with '#'), ensure the sender is a member.
     if (!target.empty() && target[0] == '#') {
-        auto channelIt = server->_channels.find(target);
-        if (channelIt == server->_channels.end()) {
+        auto channelIt = server->getChannels().find(target);
+        if (channelIt == server->getChannels().end()) {
             std::string reply = "403 " + target + " :No such channel\r\n";
             send(fd, reply.c_str(), reply.size(), 0);
             return;
@@ -86,9 +86,9 @@ void handlePrivmsgCommand(Server* server, int fd, const std::vector<std::string>
     // If the target is a channel, broadcast the message to all members except the sender.
     if (!target.empty() && target[0] == '#') 
     {
-        auto it = server->_channels.find(target);
-        if (it != server->_channels.end()) {
-            std::string fullMsg = ":" + server->_clients[fd]->nickname + " PRIVMSG " + target + " :" + message + "\r\n";
+        auto it = server->getChannels().find(target);
+        if (it != server->getChannels().end()) {
+            std::string fullMsg = ":" + server->getClients()[fd]->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
             for (int cli_fd : it->second.getClients()) {
                 if (cli_fd != fd)
                     send(cli_fd, fullMsg.c_str(), fullMsg.size(), 0);
@@ -98,12 +98,12 @@ void handlePrivmsgCommand(Server* server, int fd, const std::vector<std::string>
             send(fd, reply.c_str(), reply.size(), 0);
         }
     }
-    // Otherwise, treat the target as a nickname and send a private message.
+    // Otherwise, treat the target as a getNickname() and send a private message.
     else {
         bool found = false;
-        for (const auto& pair : server->_clients) {
-            if (pair.second->nickname == target) {
-                std::string fullMsg = ":" + server->_clients[fd]->nickname + " PRIVMSG " + target + " :" + message + "\r\n";
+        for (const auto& pair : server->getClients()) {
+            if (pair.second->getNickname() == target) {
+                std::string fullMsg = ":" + server->getClients()[fd]->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
                 send(pair.first, fullMsg.c_str(), fullMsg.size(), 0);
                 found = true;
                 break;

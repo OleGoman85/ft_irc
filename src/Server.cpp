@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/29 11:31:20 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 12:43:32 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -459,12 +459,13 @@ struct sockaddr {
  * @param port The port number on which the server listens.
  * @param password The connection password required for clients.
  */
-Server::Server(int port, const std::string& password)
-    : _password(password), //Sets the value of _password.
-      _clients(), //Initializes the _clients map to hold connected clients.
-      _channels(), //Initializes the _channels map to hold channels.
+Server::Server(int port, const std::string& password) :
       _port(port), //Sets the port the server will use.
-      _listen_fd(-1) // Sets the file descriptor for the listening socket.
+      _listen_fd(-1), // Sets the file descriptor for the listening socket.
+      _poll_fds(),
+      _password(password), //Sets the value of _password.
+      _clients(), //Initializes the _clients map to hold connected clients.
+      _channels() //Initializes the _channels map to hold channels.
 {setupServer();} //The setupServer method sets up the server socket for operation.
 
 /**
@@ -616,7 +617,7 @@ void Server::acceptNewConnection()
     _poll_fds.push_back(pfd); // Add the poll descriptor to the poll vector
 
     // Add the client to the clients map using their file descriptor
-    _clients.emplace(client_fd, std::make_unique<Client>(client_fd));
+    getClients().emplace(client_fd, std::make_unique<Client>(client_fd));
 
     // Log the new connection with the client's IP and port
     std::cout << "New connection from " 
@@ -648,15 +649,15 @@ void Server::handleClientData(int fd) {
         return;
     }
     // Append received data to the client's buffer.
-    _clients[fd]->buffer.append(buffer, bytes_received);
+    getClients()[fd]->buffer.append(buffer, bytes_received);
 
     size_t pos;
     while (true) {
         // Search for the command delimiter "\r\n" (or "\n" as fallback).
-        pos = _clients[fd]->buffer.find("\r\n");
+        pos = getClients()[fd]->buffer.find("\r\n");
         if (pos == std::string::npos) {
-            pos = _clients[fd]->buffer.find("\n");
-            if (pos != std::string::npos && pos > 0 && _clients[fd]->buffer[pos - 1] == '\r') {
+            pos = getClients()[fd]->buffer.find("\n");
+            if (pos != std::string::npos && pos > 0 && getClients()[fd]->buffer[pos - 1] == '\r') {
                 pos -= 1;
             }
         }
@@ -665,20 +666,20 @@ void Server::handleClientData(int fd) {
             break;
 
         // Extract the command up to the delimiter.
-        std::string command = _clients[fd]->buffer.substr(0, pos);
+        std::string command = getClients()[fd]->buffer.substr(0, pos);
         
         // Remove the command and its delimiter from the buffer.
-        if (_clients[fd]->buffer.substr(pos, 2) == "\r\n")
-            _clients[fd]->buffer.erase(0, pos + 2);
+        if (getClients()[fd]->buffer.substr(pos, 2) == "\r\n")
+            getClients()[fd]->buffer.erase(0, pos + 2);
         else
-            _clients[fd]->buffer.erase(0, pos + 1);
+            getClients()[fd]->buffer.erase(0, pos + 1);
 
         // Trim whitespace from the beginning and end of the command.
         command.erase(0, command.find_first_not_of(" \t"));
         command.erase(command.find_last_not_of(" \t") + 1);
 
         processCommand(fd, command);
-        if (_clients.find(fd) == _clients.end())
+        if (getClients().find(fd) == getClients().end())
             break;
     }
 }
@@ -693,7 +694,7 @@ void Server::handleClientData(int fd) {
  */
 void Server::removeClient(int fd) {
     close(fd);
-    _clients.erase(fd);
+    getClients().erase(fd);
     for (size_t i = 0; i < _poll_fds.size(); ++i) {
         if (_poll_fds[i].fd == fd) {
             _poll_fds.erase(_poll_fds.begin() + i);
@@ -712,7 +713,7 @@ void Server::removeClient(int fd) {
  */
 void Server::broadcastMessage(const std::string& message, int sender_fd) 
 {
-    for (const auto& pair : _clients) {
+    for (const auto& pair : getClients()) {
         int client_fd = pair.first;
         if (client_fd != sender_fd)
             send(client_fd, message.c_str(), message.size(), 0);
@@ -775,6 +776,22 @@ void Server::processCommand(int fd, const std::string& command) {
         std::string reply = "421 " + cmd + " :Unknown command\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
     }
+}
+
+const std::string& Server::getPassword() const {
+    return _password;
+}
+
+void Server::setPassword(const std::string& newPassword) {
+    _password = newPassword;
+}
+
+std::map<int, std::unique_ptr<Client>>& Server::getClients() {
+    return _clients;
+}
+
+std::map<std::string, Channel>& Server::getChannels() {
+    return _channels;
 }
 
 

@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 10:43:39 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/16 09:58:56 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 13:01:39 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ void handlePassCommand(Server* server, int fd, const std::vector<std::string>& t
     }
     
     // Verify that the provided password matches the server's password.
-    if (tokens[1] != server->_password) {
+    if (tokens[1] != server->getPassword()) {
         std::string reply = "464 PASS :Password incorrect\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         server->removeClient(fd);  // Remove client if authentication fails.
@@ -46,8 +46,8 @@ void handlePassCommand(Server* server, int fd, const std::vector<std::string>& t
     }
     
     // If the client is not registered yet, update its authentication state.
-    if (server->_clients.find(fd) != server->_clients.end()) {
-        server->_clients[fd]->authState = WAITING_FOR_NICK;
+    if (server->getClients().find(fd) != server->getClients().end()) {
+        server->getClients()[fd]->authState = WAITING_FOR_NICK;
         std::string reply = "001 :Password accepted.\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
     }
