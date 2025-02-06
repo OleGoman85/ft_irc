@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 11:31:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/20 11:31:21 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 12:35:36 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,13 +39,13 @@ void handleUserCommand(Server* server, int fd, const std::vector<std::string>& t
     }
     
     // Set the client's username from the second token.
-    server->_clients[fd]->username = tokens[1];
+    server->getClients()[fd]->setUsername(tokens[1]);
     
     // If the client's nickname has already been set (via the NICK command), mark the client as fully registered.
-    if (!server->_clients[fd]->nickname.empty())
-        server->_clients[fd]->authState = AUTH_REGISTERED;
+    if (!server->getClients()[fd]->getNickname().empty())
+        server->getClients()[fd]->authState = AUTH_REGISTERED;
     
     // Send a confirmation message to the client indicating that the user information is set successfully.
-    std::string reply = "001 " + server->_clients[fd]->nickname + " :User information set successfully\r\n";
+    std::string reply = "001 " + server->getClients()[fd]->getNickname() + " :User information set successfully\r\n";
     send(fd, reply.c_str(), reply.size(), 0);
 }

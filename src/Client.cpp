@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:57 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/16 12:08:12 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/05 09:41:49 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,17 +22,26 @@
  *
  * @param fd The file descriptor for the client's connection.
  */
-Client::Client(int fd)
-    : _fd(fd),             // Initialize the file descriptor first as declared.
-      nickname(""),        // Initialize nickname as an empty string.
-      username(""),        // Initialize username as an empty string.
+Client::Client(int fd) :
       buffer(""),          // Initialize the incoming data buffer as empty.
-      authState(NOT_REGISTERED) {}// Set initial authentication state to NOT_REGISTERED.
+      authState(NOT_REGISTERED), // Set initial authentication state to NOT_REGISTERED.
+      _fd(fd),             // Initialize the file descriptor first as declared.
+      _nickname(""),        // Initialize nickname as an empty string.
+      _username("")        // Initialize username as an empty string.
+      {}
 
 
 Client::~Client() {}
 
 int Client::getFd() const {return _fd;}
+
+std::string Client::getNickname() const {return _nickname;}
+
+void Client::setNickname(const std::string& newNickname) {_nickname = newNickname;}
+
+std::string Client::getUsername() const {return _username;}
+
+void Client::setUsername(const std::string& newUsername) {_username = newUsername;}
 
 
 //!

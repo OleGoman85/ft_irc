@@ -22,7 +22,7 @@
  */
 void handleTopicCommand(Server* server, int fd, const std::vector<std::string>& tokens, const std::string& command) {
     // Verify that the client is fully registered.
-    if (server->_clients[fd]->authState != AUTH_REGISTERED) {
+    if (server->getClients()[fd]->authState != AUTH_REGISTERED) {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -39,8 +39,8 @@ void handleTopicCommand(Server* server, int fd, const std::vector<std::string>& 
     std::string channelName = tokens[1];
     
     // Look for the channel in the server's channel map.
-    auto it = server->_channels.find(channelName);
-    if (it == server->_channels.end()) {
+    auto it = server->getChannels().find(channelName);
+    if (it == server->getChannels().end()) {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
@@ -63,7 +63,7 @@ void handleTopicCommand(Server* server, int fd, const std::vector<std::string>& 
         // Set the new topic for the channel.
         it->second.setTopic(newTopic);
         // Construct a topic change notification message.
-        std::string topicMsg = ":" + server->_clients[fd]->nickname + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+        std::string topicMsg = ":" + server->getClients()[fd]->getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
         // Send the updated topic to all members of the channel.
         for (int cli_fd : it->second.getClients()) {
             send(cli_fd, topicMsg.c_str(), topicMsg.size(), 0);
