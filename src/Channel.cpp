@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/06 11:44:58 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/06 20:22:58 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,7 +163,12 @@ void Channel::setMode(char mode, bool enable, const std::string& param)
             break;
         case 'l':
             if (enable && !param.empty())
-                _userLimit = std::stoi(param);
+            {
+                int limit = std::stoi(param);
+                if (limit <= 0)
+                    throw std::invalid_argument("User limit must be positive");
+                _userLimit = limit;
+            }
             else if (!enable)
                 _userLimit = 0;
             break;
@@ -173,6 +178,7 @@ void Channel::setMode(char mode, bool enable, const std::string& param)
             break;
     }
 }
+
 
 /**
  * @brief Checks if a specific mode is set for the channel.
