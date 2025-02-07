@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
+/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/06 20:22:58 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/07 07:15:00 by aarbenin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Channel.hpp"
 
 #include <cstdlib>  // for std::stoi
+#include <stdexcept>
 
 /**
  * @brief Channel constructor.
@@ -178,7 +179,6 @@ void Channel::setMode(char mode, bool enable, const std::string& param)
             break;
     }
 }
-
 
 /**
  * @brief Checks if a specific mode is set for the channel.
