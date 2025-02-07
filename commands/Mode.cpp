@@ -1,28 +1,23 @@
+#include <cctype>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include "../include/Channel.hpp"
 #include "../include/Server.hpp"
 
-#include <vector>
-#include <cctype>
-
-
-
-struct ModeChange {
-    bool add;           // true для '+', false для '-'
-    char mode;          // символ режима
+struct ModeChange
+{
+    bool        add;    // true для '+', false для '-'
+    char        mode;   // символ режима
     std::string param;  // параметр, если требуется
 };
 
-void handleModeCommand(
-    Server* server,
-    int fd,
-    const std::vector<std::string>& tokens,
-    const std::string& rawCommand
-)
+void handleModeCommand(Server* server, int fd,
+                       const std::vector<std::string>& tokens,
+                       const std::string&              rawCommand)
 {
-    (void)rawCommand; // не используется прямо сейчас
+    (void)rawCommand;  // не используется прямо сейчас
 
     // 1. Проверка регистрации
     if (server->getClients()[fd]->authState != AUTH_REGISTERED)
@@ -41,7 +36,7 @@ void handleModeCommand(
     }
 
     std::string channelName = tokens[1];
-    auto it = server->getChannels().find(channelName);
+    auto        it          = server->getChannels().find(channelName);
     if (it == server->getChannels().end())
     {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
@@ -54,22 +49,19 @@ void handleModeCommand(
     if (tokens.size() == 2)
     {
         std::string modes;
-        if (channel.isInviteOnly())      modes += "i";
+        if (channel.isInviteOnly()) modes += "i";
         if (channel.isTopicRestricted()) modes += "t";
-        if (channel.hasMode('k'))        modes += "k";
-        if (channel.hasMode('l'))        modes += "l";
+        if (channel.hasMode('k')) modes += "k";
+        if (channel.hasMode('l')) modes += "l";
 
         modes = modes.empty() ? "+" : "+" + modes;
 
-        std::string reply =
-            "324 " + server->getClients()[fd]->getNickname() + " " +
-            channelName + " " + modes;
+        std::string reply = "324 " + server->getClients()[fd]->getNickname() +
+                            " " + channelName + " " + modes;
 
-        if (channel.hasMode('k'))
-            reply += " " + channel.getChannelKey();
+        if (channel.hasMode('k')) reply += " " + channel.getChannelKey();
         if (channel.hasMode('l'))
             reply += " " + std::to_string(channel.getUserLimit());
-
 
         reply += "\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -79,7 +71,8 @@ void handleModeCommand(
     // 4. Только операторы могут менять режимы
     if (!channel.isOperator(fd))
     {
-        std::string reply = "482 " + channelName + " :You're not a channel operator\r\n";
+        std::string reply =
+            "482 " + channelName + " :You're not a channel operator\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
@@ -88,13 +81,14 @@ void handleModeCommand(
     std::string modeStr = tokens[2];
     if (modeStr.empty() || (modeStr[0] != '+' && modeStr[0] != '-'))
     {
-        std::string err = "472 " + server->getClients()[fd]->getNickname() + " :Invalid mode string\r\n";
+        std::string err = "472 " + server->getClients()[fd]->getNickname() +
+                          " :Invalid mode string\r\n";
         send(fd, err.c_str(), err.size(), 0);
         return;
     }
 
-    size_t paramIdx = 3; // Индекс следующего параметра в tokens
-    bool currentSign = (modeStr[0] == '+');
+    size_t paramIdx    = 3;  // Индекс следующего параметра в tokens
+    bool   currentSign = (modeStr[0] == '+');
     std::vector<ModeChange> changes;
 
     // 6. Разбор строки флагов
@@ -113,7 +107,7 @@ void handleModeCommand(
         }
 
         ModeChange change;
-        change.add = currentSign;
+        change.add  = currentSign;
         change.mode = c;
 
         switch (c)
@@ -131,7 +125,8 @@ void handleModeCommand(
                 {
                     if (paramIdx >= tokens.size())
                     {
-                        std::string err = "461 MODE :Not enough parameters for +k\r\n";
+                        std::string err =
+                            "461 MODE :Not enough parameters for +k\r\n";
                         send(fd, err.c_str(), err.size(), 0);
                         return;
                     }
@@ -152,7 +147,8 @@ void handleModeCommand(
                 {
                     if (paramIdx >= tokens.size())
                     {
-                        std::string err = "461 MODE :Not enough parameters for +l\r\n";
+                        std::string err =
+                            "461 MODE :Not enough parameters for +l\r\n";
                         send(fd, err.c_str(), err.size(), 0);
                         return;
                     }
@@ -162,7 +158,8 @@ void handleModeCommand(
                         int limit = std::stoi(limitStr);
                         if (limit <= 0)
                         {
-                            std::string err = "461 MODE l :Invalid limit parameter\r\n";
+                            std::string err =
+                                "461 MODE l :Invalid limit parameter\r\n";
                             send(fd, err.c_str(), err.size(), 0);
                             return;
                         }
@@ -171,7 +168,8 @@ void handleModeCommand(
                     }
                     catch (const std::exception&)
                     {
-                        std::string err = "461 MODE l :Invalid limit parameter\r\n";
+                        std::string err =
+                            "461 MODE l :Invalid limit parameter\r\n";
                         send(fd, err.c_str(), err.size(), 0);
                         return;
                     }
@@ -187,12 +185,13 @@ void handleModeCommand(
             {
                 if (paramIdx >= tokens.size())
                 {
-                    std::string err = "461 MODE :Not enough parameters for +o/-o\r\n";
+                    std::string err =
+                        "461 MODE :Not enough parameters for +o/-o\r\n";
                     send(fd, err.c_str(), err.size(), 0);
                     return;
                 }
                 std::string targetNick = tokens[paramIdx++];
-                int targetFd = -1;
+                int         targetFd   = -1;
                 for (auto& [cliFd, cliPtr] : server->getClients())
                 {
                     if (cliPtr->getNickname() == targetNick)
@@ -203,10 +202,19 @@ void handleModeCommand(
                 }
                 if (targetFd == -1)
                 {
-                    std::string err = "401 " + targetNick + " :No such nick\r\n";
+                    std::string err =
+                        "401 " + targetNick + " :No such nick\r\n";
                     send(fd, err.c_str(), err.size(), 0);
                     return;
                 }
+                if (!channel.hasClient(targetFd))
+                {
+                    std::string err = "441 " + targetNick + " " + channelName +
+                                      " :They aren't on that channel\r\n";
+                    send(fd, err.c_str(), err.size(), 0);
+                    return;
+                }
+
                 if (currentSign)
                 {
                     channel.addOperator(targetFd);
@@ -218,8 +226,7 @@ void handleModeCommand(
                         int opCount = 0;
                         for (int cfd : channel.getClients())
                         {
-                            if (channel.isOperator(cfd))
-                                opCount++;
+                            if (channel.isOperator(cfd)) opCount++;
                         }
                         if (opCount > 1)
                         {
@@ -227,7 +234,9 @@ void handleModeCommand(
                         }
                         else
                         {
-                            std::string err = "482 " + channelName + " :Cannot remove the last operator\r\n";
+                            std::string err =
+                                "482 " + channelName +
+                                " :Cannot remove the last operator\r\n";
                             send(fd, err.c_str(), err.size(), 0);
                             return;
                         }
@@ -240,17 +249,18 @@ void handleModeCommand(
 
             default:
             {
-                std::string err = "472 " + server->getClients()[fd]->getNickname()
-                                  + " " + c + " :is unknown mode char to me\r\n";
+                std::string err = "472 " +
+                                  server->getClients()[fd]->getNickname() +
+                                  " " + c + " :is unknown mode char to me\r\n";
                 send(fd, err.c_str(), err.size(), 0);
-                continue; 
+                continue;
             }
         }
         changes.push_back(change);
     }
 
     // 7. Формирование итоговой строки с группировкой по знаку
-    std::ostringstream modeStream;
+    std::ostringstream       modeStream;
     std::vector<std::string> modeParams;
     if (!changes.empty())
     {
@@ -272,13 +282,12 @@ void handleModeCommand(
         }
     }
     std::string finalModeStr = modeStream.str();
-    if (finalModeStr.empty())
-        return;
+    if (finalModeStr.empty()) return;
 
     // 8. Формирование сообщения для рассылки
     std::ostringstream broadcast;
-    broadcast << ":" << server->getClients()[fd]->getNickname()
-              << " MODE " << channelName << " " << finalModeStr;
+    broadcast << ":" << server->getClients()[fd]->getNickname() << " MODE "
+              << channelName << " " << finalModeStr;
     for (const std::string& p : modeParams)
     {
         broadcast << " " << p;
