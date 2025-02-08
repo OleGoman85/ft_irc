@@ -7,6 +7,7 @@ import time
 import test_mode 
 import test_invite
 import test_join
+import test_file
 
 
 BLUE = "\033[1;34m"
@@ -62,6 +63,7 @@ def main():
         "mode": test_mode.run_tests,
         "invite": test_invite.run_tests, 
         "join": test_join.run_tests,
+        "file": test_file.run_tests,
         # присобачиваем новые тесты сюда
     }
     print_banner()
