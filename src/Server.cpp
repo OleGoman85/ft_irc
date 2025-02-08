@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/05 12:43:32 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/08 06:41:20 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -446,6 +446,8 @@ struct sockaddr {
 #include "../commands/Topic.hpp"
 #include "../commands/Mode.hpp"
 #include "../commands/Part.hpp"
+#include "../commands/FileCommand.hpp"
+
 
 
 
@@ -772,6 +774,10 @@ void Server::processCommand(int fd, const std::string& command) {
     else if (cmd == "MODE") {
         handleModeCommand(this, fd, tokens, command);
     }
+    else if (cmd == "FILE") {
+    handleFileCommand(this, fd, tokens, command);
+    }
+
     else {
         std::string reply = "421 " + cmd + " :Unknown command\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
@@ -794,6 +800,9 @@ std::map<std::string, Channel>& Server::getChannels() {
     return _channels;
 }
 
+std::map<std::string, FileTransfer>& Server::getFileTransfers() {
+    return _fileTransfers;
+}
 
 
 //! POOL

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:42:09 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/05 12:39:00 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/08 06:36:51 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include <poll.h>
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "FileTransfer.hpp"
 
 /**
  * @brief Represents an IRC server.
@@ -94,6 +95,8 @@ public:
      */
     std::map<std::string, Channel>& getChannels();
 
+    std::map<std::string, FileTransfer>& getFileTransfers();
+
 
 private:
     int _port;                     ///< The port number on which the server listens.
@@ -103,6 +106,10 @@ private:
     std::string _password;                         ///< The connection password for the server.
     std::map<int, std::unique_ptr<Client>> _clients; ///< Map of client file descriptors to Client objects.
     std::map<std::string, Channel> _channels;        ///< Map of channel names to Channel objects.
+
+    std::map<std::string, FileTransfer> _fileTransfers; 
+    // где ключ — это некий "senderFd_filename",
+    // а значение — сам объект FileTransfer
 
     /**
      * @brief Sets up the server's listening socket.
