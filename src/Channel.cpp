@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/07 07:15:00 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/08 11:27:25 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,21 @@
  *
  * @param name The name of the channel.
  */
+ Channel::Channel()
+    : _name(""),
+      _topic(""),
+      _inviteOnly(false),
+      _topicRestricted(false),
+      _channelKey(""),
+      _userLimit(0)
+{
+    _modes['i'] = _inviteOnly;
+    _modes['t'] = _topicRestricted;
+    _modes['k'] = false;
+    _modes['o'] = false;
+    _modes['l'] = false;
+}
+
 Channel::Channel(const std::string& name)
     : _name(name),
       _topic(""),

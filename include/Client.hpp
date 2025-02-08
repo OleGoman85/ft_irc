@@ -3,13 +3,12 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/05 09:42:33 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/08 11:05:07 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
@@ -21,11 +20,14 @@
  *
  * This enum defines the various stages of client registration.
  */
-enum AuthState {
-    NOT_REGISTERED,   ///< The client has not yet registered.
-    WAITING_FOR_NICK, ///< The client has passed the PASS command and is waiting to set a nickname.
-    WAITING_FOR_USER, ///< The client has set a nickname and is waiting for USER command.
-    AUTH_REGISTERED   ///< The client is fully registered.
+enum AuthState
+{
+    NOT_REGISTERED,    ///< The client has not yet registered.
+    WAITING_FOR_NICK,  ///< The client has passed the PASS command and is
+                       ///< waiting to set a nickname.
+    WAITING_FOR_USER,  ///< The client has set a nickname and is waiting for
+                       ///< USER command.
+    AUTH_REGISTERED    ///< The client is fully registered.
 };
 
 /**
@@ -35,9 +37,9 @@ enum AuthState {
  * such as its socket file descriptor, nickname, username, input buffer,
  * and authentication state.
  */
-class Client {
+class Client
+{
 public:
-
     Client(int fd);
     ~Client();
 
@@ -49,18 +51,18 @@ public:
     int getFd() const;
 
     std::string getNickname() const;
-    void setNickname(const std::string& newNickname);
+    void        setNickname(const std::string& newNickname);
 
     std::string getUsername() const;
-    void setUsername(const std::string& newUsername);
-    
-    std::string buffer;   ///< Buffer for storing incoming data.
-    AuthState authState;  ///< Current authentication state of the client.
+    void        setUsername(const std::string& newUsername);
+
+    std::string buffer;     ///< Buffer for storing incoming data.
+    AuthState   authState;  ///< Current authentication state of the client.
 
 private:
-    int _fd; ///< File descriptor for the client socket.
-    std::string _nickname; ///< Client's nickname 
-    std::string _username; ///< Client's username 
+    int         _fd;        ///< File descriptor for the client socket.
+    std::string _nickname;  ///< Client's nickname
+    std::string _username;  ///< Client's username
 };
 
-#endif // CLIENT_HPP
+#endif  // CLIENT_HPP
