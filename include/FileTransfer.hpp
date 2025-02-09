@@ -5,41 +5,80 @@
 #include <vector>
 
 /**
- * @brief Хранит информацию о передаче файла.
+ * @brief Holds information about a file transfer session.
  *
- * Содержит необходимые поля для отслеживания, кто посылает файл, кто получает,
- * каков размер и какой прогресс отправки/получения.
+ * This class tracks sender, receiver, filename, filesize, and any
+ * accumulated file data.
  */
 class FileTransfer {
 public:
+    /**
+     * @brief Default constructor for an empty file transfer.
+     */
     FileTransfer();
-    FileTransfer(int senderFd, int receiverFd,
+
+    /**
+     * @brief Construct a file transfer object with all needed fields.
+     *
+     * @param senderFd   The file descriptor of the sender
+     * @param receiverFd The file descriptor of the receiver
+     * @param filename   The file name
+     * @param filesize   The total expected size of the file (in bytes)
+     */
+    FileTransfer(int senderFd,
+                 int receiverFd,
                  const std::string& filename,
                  size_t filesize);
 
-    // Сеттеры и геттеры
+    /**
+     * @brief Returns the sender's file descriptor.
+     */
     int getSenderFd() const;
+
+    /**
+     * @brief Returns the receiver's file descriptor.
+     */
     int getReceiverFd() const;
+
+    /**
+     * @brief Returns the filename (as specified by the sender).
+     */
     const std::string& getFilename() const;
+
+    /**
+     * @brief Returns the total expected size of the file (in bytes).
+     */
     size_t getFilesize() const;
+
+    /**
+     * @brief Returns how many bytes we have currently received.
+     */
     size_t getReceivedBytes() const;
 
-    // Добавляем кусок (чанк) сырых байт файла
+    /**
+     * @brief Appends a chunk of raw bytes into the file buffer.
+     *
+     * @param dataChunk A vector of bytes
+     */
     void appendData(const std::vector<char>& dataChunk);
 
-    // Возвращает true, если объём уже принятых данных >= общего размера
+    /**
+     * @brief Checks whether the received data meets or exceeds the total size.
+     */
     bool isComplete() const;
 
-    // Возвращает весь «накопленный» файл
+    /**
+     * @brief Provides read-only access to the accumulated file buffer.
+     */
     const std::vector<char>& getFileBuffer() const;
 
 private:
-    int _senderFd;               ///< Кто отправляет (fd)
-    int _receiverFd;             ///< Кто получает (fd)
-    std::string _filename;       ///< Имя файла (как сообщил отправитель)
-    size_t _filesize;            ///< Общий ожидаемый размер файла
-    size_t _receivedBytes;       ///< Сколько уже получено сервером
-    std::vector<char> _fileBuffer; ///< Накопленные данные файла
+    int _senderFd;         ///< The sender's file descriptor
+    int _receiverFd;       ///< The receiver's file descriptor
+    std::string _filename; ///< The file name
+    size_t _filesize;      ///< The declared file size
+    size_t _receivedBytes; ///< How many bytes we've received so far
+    std::vector<char> _fileBuffer; ///< The accumulated file data
 };
 
 #endif // FILETRANSFER_HPP
