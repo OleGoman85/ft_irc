@@ -4,9 +4,11 @@
  */
 
 #include "BotCommand.hpp"
-#include <algorithm>   // for std::transform
-#include <cstdlib>     // for std::rand, std::srand
-#include <ctime>       // for std::time
+
+#include <algorithm>  // for std::transform
+#include <cstdlib>    // for std::rand, std::srand
+#include <ctime>      // for std::time
+
 #include "../include/Channel.hpp"
 #include "../include/Client.hpp"
 #include "../include/Server.hpp"
@@ -31,12 +33,15 @@ static void sendToClient(int fd, const std::string& msg)
  * @param channel Reference to the Channel object where the message is sent.
  * @param message The message content to broadcast in the channel.
  */
-static void sendToChannelAsBot(Server* server, Channel& channel, const std::string& message)
+static void sendToChannelAsBot(Server* server, Channel& channel,
+                               const std::string& message)
 {
-    (void)server; // Unused parameter
+    (void)server;  // Unused parameter
 
-    // Construct an IRC-style prefix: ":AwesomeBot!BotUser@irc.local PRIVMSG #channel :Message"
-    std::string prefix = ":AwesomeBot!BotUser@irc.local PRIVMSG " + channel.getName() + " :";
+    // Construct an IRC-style prefix: ":AwesomeBot!BotUser@irc.local PRIVMSG
+    // #channel :Message"
+    std::string prefix =
+        ":AwesomeBot!BotUser@irc.local PRIVMSG " + channel.getName() + " :";
     std::string fullMsg = prefix + message + "\r\n";
 
     // Send the message to each channel member
@@ -50,7 +55,7 @@ static void sendToChannelAsBot(Server* server, Channel& channel, const std::stri
 
 /**
  * @brief Generates a random 8-Ball style answer.
- * 
+ *
  * @return A random yes/no/maybe style message.
  */
 static std::string getRandom8BallAnswer()
@@ -62,24 +67,22 @@ static std::string getRandom8BallAnswer()
         seeded = true;
     }
 
-    static const char* answers[] = {
-        "Yes!",
-        "No!",
-        "Maybe...",
-        "Certainly yes",
-        "Ask again later",
-        "Definitely no!",
-        "Chances are low, but not zero",
-        "Ask the neighbor's cat"
-    };
+    static const char* answers[] = {"Yes!",
+                                    "No!",
+                                    "Maybe...",
+                                    "Certainly yes",
+                                    "Ask again later",
+                                    "Definitely no!",
+                                    "Chances are low, but not zero",
+                                    "Ask the neighbor's cat"};
 
-    int size = static_cast<int>(sizeof(answers) / sizeof(answers[0]));
+    int size        = static_cast<int>(sizeof(answers) / sizeof(answers[0]));
     int randomIndex = std::rand() % size;
     return answers[randomIndex];
 }
 
 /**
- * @brief Handles the "BOT" command from a client. 
+ * @brief Handles the "BOT" command from a client.
  *
  * The bot supports the following subcommands:
  * - BOT JOIN #channel
@@ -94,9 +97,9 @@ static std::string getRandom8BallAnswer()
  */
 void handleBotCommand(Server* server, int fd,
                       const std::vector<std::string>& tokens,
-                      const std::string& fullCommand)
+                      const std::string&              fullCommand)
 {
-    (void)fullCommand; // Unused parameter
+    (void)fullCommand;  // Unused parameter
 
     // Must have at least "BOT <subcommand>"
     if (tokens.size() < 2)
@@ -107,7 +110,8 @@ void handleBotCommand(Server* server, int fd,
 
     // Transform subcommand to uppercase for case-insensitive matching
     std::string subCommand = tokens[1];
-    std::transform(subCommand.begin(), subCommand.end(), subCommand.begin(), ::toupper);
+    std::transform(subCommand.begin(), subCommand.end(), subCommand.begin(),
+                   ::toupper);
 
     if (subCommand == "JOIN")
     {
@@ -119,15 +123,18 @@ void handleBotCommand(Server* server, int fd,
         std::string channelName = tokens[2];
 
         // Create the channel if it does not exist
-        if (server->getChannels().find(channelName) == server->getChannels().end())
+        if (server->getChannels().find(channelName) ==
+            server->getChannels().end())
         {
-            server->getChannels().insert(std::make_pair(channelName, Channel(channelName)));
+            server->getChannels().insert(
+                std::make_pair(channelName, Channel(channelName)));
         }
 
         Channel& channelRef = server->getChannels()[channelName];
 
         sendToClient(fd, "Bot joined channel " + channelName);
-        sendToChannelAsBot(server, channelRef, "Hello, everyone! I've joined " + channelName);
+        sendToChannelAsBot(server, channelRef,
+                           "Hello, everyone! I've joined " + channelName);
     }
     else if (subCommand == "LEAVE")
     {
@@ -138,14 +145,16 @@ void handleBotCommand(Server* server, int fd,
         }
         std::string channelName = tokens[2];
 
-        if (server->getChannels().find(channelName) == server->getChannels().end())
+        if (server->getChannels().find(channelName) ==
+            server->getChannels().end())
         {
             sendToClient(fd, "403 " + channelName + " :No such channel");
             return;
         }
         Channel& channelRef = server->getChannels()[channelName];
 
-        sendToChannelAsBot(server, channelRef, "Goodbye, friends! I've left " + channelName);
+        sendToChannelAsBot(server, channelRef,
+                           "Goodbye, friends! I've left " + channelName);
         sendToClient(fd, "Bot left channel " + channelName);
     }
     else if (subCommand == "SAY")
@@ -157,7 +166,8 @@ void handleBotCommand(Server* server, int fd,
         }
         std::string channelName = tokens[2];
 
-        if (server->getChannels().find(channelName) == server->getChannels().end())
+        if (server->getChannels().find(channelName) ==
+            server->getChannels().end())
         {
             sendToClient(fd, "403 " + channelName + " :No such channel");
             return;
@@ -174,8 +184,7 @@ void handleBotCommand(Server* server, int fd,
         std::string message;
         for (size_t i = 3; i < tokens.size(); ++i)
         {
-            if (i > 3)
-                message += " ";
+            if (i > 3) message += " ";
             message += tokens[i];
         }
 
@@ -186,7 +195,9 @@ void handleBotCommand(Server* server, int fd,
     {
         if (tokens.size() < 3)
         {
-            sendToClient(fd, "461 BOT 8BALL :Not enough parameters (you must ask a question!)");
+            sendToClient(fd,
+                         "461 BOT 8BALL :Not enough parameters (you must ask a "
+                         "question!)");
             return;
         }
 
@@ -194,13 +205,12 @@ void handleBotCommand(Server* server, int fd,
         std::string question;
         for (size_t i = 2; i < tokens.size(); ++i)
         {
-            if (i > 2)
-                question += " ";
+            if (i > 2) question += " ";
             question += tokens[i];
         }
 
         std::string answer = getRandom8BallAnswer();
-        std::string reply = "Magic 8-Ball says: " + answer;
+        std::string reply  = "Magic 8-Ball says: " + answer;
         sendToClient(fd, reply);
     }
     else

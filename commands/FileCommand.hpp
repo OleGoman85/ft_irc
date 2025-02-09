@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+
 #include "../include/Server.hpp"
 
 /**
@@ -13,9 +14,8 @@
  *   FILE DATA <filename> <base64_chunk>
  *   FILE END  <filename>
  */
-void handleFileCommand(Server* server,
-                       int fd,
+void handleFileCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
-                       const std::string& fullCommand);
+                       const std::string&              fullCommand);
 
-#endif // FILECOMMAND_HPP
+#endif  // FILECOMMAND_HPP
