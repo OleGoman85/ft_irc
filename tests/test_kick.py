@@ -52,6 +52,7 @@ def flush_recv(client):
         pass
 
 def register_client(client, nick, user, realname):
+    send_command(client, f"PASS {SERVER_PASSWORD}")
     send_command(client, f"NICK {nick}")
     send_command(client, f"USER {user} 0 * :{realname}")
     time.sleep(0.5)
@@ -80,10 +81,6 @@ def run_kick_test(test_num, test_name, client, command, expected_substr):
     print(f"{BLUE}-------------------------------------{RESET}\n")
 
 def make_operator(client, channel, nick):
-    """
-    Делает указанного пользователя оператором канала.
-    Предполагается, что `client` уже является оператором.
-    """
     send_command(client, f"MODE {channel} +o {nick}")
     time.sleep(0.3)
     flush_recv(client)

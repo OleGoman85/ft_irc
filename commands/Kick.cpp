@@ -1,206 +1,215 @@
 #include "Kick.hpp"
 
+#include <sstream>
 #include <string>
 
+#include "../include/Channel.hpp"
+#include "../include/Client.hpp"
 #include "../include/Server.hpp"
+
+/**
+ * @brief Finds a client FD by nickname.
+ *
+ * @param server Pointer to the Server.
+ * @param nickname The nickname to search for.
+ * @return The file descriptor of the found client, or -1 if not found.
+ */
+static int findUserFdByNick(Server* server, const std::string& nickname)
+{
+    for (std::map<int, std::unique_ptr<Client> >::iterator it =
+             server->getClients().begin();
+         it != server->getClients().end(); ++it)
+    {
+        if (it->second->getNickname() == nickname) return it->first;
+    }
+    return -1;
+}
+
+/**
+ * @brief Checks if a given client is on the specified channel.
+ *
+ * @param server Pointer to the Server.
+ * @param fd The file descriptor of the client to check.
+ * @param channelName The name of the channel.
+ * @return true if the client is in the channel, false otherwise.
+ */
+static bool isUserInChannel(Server* server, int fd,
+                            const std::string& channelName)
+{
+    if (server->getChannels().find(channelName) == server->getChannels().end())
+        return false;
+
+    Channel& chan = server->getChannels()[channelName];
+    return chan.hasClient(fd);
+}
+
+/**
+ * @brief Checks if a given client is an operator in the specified channel.
+ *
+ * @param server Pointer to the Server.
+ * @param fd The file descriptor of the client to check.
+ * @param channelName The name of the channel.
+ * @return true if the client is an operator on the channel, false otherwise.
+ */
+static bool isUserOperatorInChannel(Server* server, int fd,
+                                    const std::string& channelName)
+{
+    if (server->getChannels().find(channelName) == server->getChannels().end())
+        return false;
+
+    Channel& chan = server->getChannels()[channelName];
+    return chan.isOperator(fd);
+}
+
+/**
+ * @brief Counts how many operators are in the channel.
+ *
+ * @param chan Reference to the Channel object.
+ * @return The count of operator FDs in the channel.
+ */
+static int countOperators(const Channel& chan)
+{
+    int count = 0;
+    for (int cliFd : chan.getClients())
+    {
+        if (chan.isOperator(cliFd)) count++;
+    }
+    return count;
+}
 
 /**
  * @brief Handles the KICK command from a client.
  *
- * This function processes the KICK command, which is used to remove a target
- * user from a specified channel. It first verifies that the sender is fully
- * registered, then checks whether enough parameters were provided. Next, it
- * attempts to locate the specified channel and finds the target user by
- * nickname. If the target user is found as a member of the channel, they are
- * removed. A KICK notification is then broadcast to all remaining channel
- * members. If the target user is not found, an error message is sent back to
- * the sender.
+ * removes a target user from the specified channel.
+ * The overall logic is:
+ *   Check registration and parameters.
+ *   Verify that the channel exists, and that the kicker is on it + is an
+ * operator.
+ *   Find the target user by nickname; check if they're on the channel.
+ *   If the target user is the last operator in a channel that still has
+ * other participants, deny the KICK (analogous to the PART logic).
+ *   Otherwise, broadcast a KICK message and remove the target from the
+ * channel.
+ *   If the channel becomes empty, delete it.
  *
- * @param server Pointer to the Server object managing the IRC server.
- * @param fd The file descriptor of the client issuing the KICK command.
- * @param tokens A vector of strings representing the tokenized command
- * (expected: "KICK", <channelName>, <targetNick>).
- * @param command The complete command string (unused in this implementation).
+ * Numeric replies used:
+ *   - 451 :You have not registered
+ *   - 461 KICK :Not enough parameters
+ *   - 403 <channel> :No such channel
+ *   - 442 <channel> :You're not on that channel
+ *   - 482 <channel> :You're not channel operator
+ *   - 401 <nickname> :No such nick
+ *   - 441 <nickname> <channel> :They aren't on that channel
+ *   - 482 <channel> :Cannot remove last operator (reused numeric)
  */
 void handleKickCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
                        const std::string& /*command*/)
 {
-    // Check if the client (sender) is fully registered.
     if (server->getClients()[fd]->authState != AUTH_REGISTERED)
     {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // Verify that enough parameters are provided: KICK <channel> <targetNick>
     if (tokens.size() < 3)
     {
         std::string reply = "461 KICK :Not enough parameters\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
     std::string channelName = tokens[1];
     std::string targetNick  = tokens[2];
 
-    // Find the specified channel.
-    auto it = server->getChannels().find(channelName);
-    if (it == server->getChannels().end())
+    std::map<std::string, Channel>& chanMap = server->getChannels();
+    if (chanMap.find(channelName) == chanMap.end())
     {
         std::string reply = "403 " + channelName + " :No such channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
+    Channel& channelObj = chanMap[channelName];
 
-    bool found = false;
-    // Search for the target user in the channel.
-    for (int cli_fd : it->second.getClients())
+    if (!isUserInChannel(server, fd, channelName))
     {
-        auto clientIt = server->getClients().find(cli_fd);
-        if (clientIt == server->getClients().end())
-        {
-            continue;  // Skip if the client is no longer there
-        }
-
-        if (clientIt->second->getNickname() == targetNick)
-        {
-            it->second.removeClient(cli_fd);
-            if (it->second.getClients().empty())
-            {
-                server->getChannels().erase(
-                    it);  // Delete the channel if it is empty
-            }
-
-            std::string kickMsg = ":" + server->getClients()[fd]->getNickname() +
-                                  " KICK " + channelName + " " + targetNick +
-                                  " :Kicked\r\n";
-            server->broadcastMessage(kickMsg, fd);
-            found = true;
-            break;
-        }
-    }
-    // If no such target user is found, send an error message.
-    if (!found)
-    {
-        std::string reply = "401 " + targetNick + " :No such nick/channel\r\n";
+        std::string reply =
+            "442 " + channelName + " :You're not on that channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
+        return;
     }
+
+    if (!isUserOperatorInChannel(server, fd, channelName))
+    {
+        std::string reply =
+            "482 " + channelName + " :You're not channel operator\r\n";
+        send(fd, reply.c_str(), reply.size(), 0);
+        return;
+    }
+
+    int targetFd = findUserFdByNick(server, targetNick);
+    if (targetFd == -1)
+    {
+        std::string reply = "401 " + targetNick + " :No such nick\r\n";
+        send(fd, reply.c_str(), reply.size(), 0);
+        return;
+    }
+
+    if (!isUserInChannel(server, targetFd, channelName))
+    {
+        std::string reply = "441 " + targetNick + " " + channelName +
+                            " :They aren't on that channel\r\n";
+        send(fd, reply.c_str(), reply.size(), 0);
+        return;
+    }
+
+    if (channelObj.isOperator(targetFd))
+    {
+        size_t totalUsers = channelObj.getClients().size();
+        if (totalUsers > 1)
+        {
+            int opCount = countOperators(channelObj);
+            if (opCount == 1)
+            {
+                std::string reply =
+                    "482 " + channelName + " :Cannot remove last operator\r\n";
+                send(fd, reply.c_str(), reply.size(), 0);
+                return;
+            }
+        }
+    }
+
+    std::string comment;
+    if (tokens.size() > 3)
+    {
+        std::ostringstream oss;
+        for (size_t i = 3; i < tokens.size(); ++i)
+        {
+            if (i > 3) oss << " ";
+            oss << tokens[i];
+        }
+        comment = oss.str();
+    }
+    else
+    {
+        comment = server->getClients()[fd]->getNickname();
+    }
+
+    channelObj.removeClient(targetFd);
+
+    if (channelObj.getClients().empty())
+    {
+        chanMap.erase(channelName);
+    }
+
+    // Classic format: :<kickerNick>!<user>@<host> KICK <channel> <targetNick>
+    // :<comment>
+    std::string kickMsg = ":" + server->getClients()[fd]->getNickname() +
+                          "!user@localhost KICK " + channelName + " " +
+                          targetNick + " :" + comment + "\r\n";
+    for (int memFd : channelObj.getClients())
+    {
+        if (memFd != fd) send(memFd, kickMsg.c_str(), kickMsg.size(), 0);
+    }
+    send(targetFd, kickMsg.c_str(), kickMsg.size(), 0);
+    send(fd, kickMsg.c_str(), kickMsg.size(), 0);
 }
-
-// /**
-//  * @brief Handles the KICK command from a client.
-//  *
-//  * The KICK command is used to remove a user from a channel.
-//  * The command format: `KICK <channel> <targetNick> [:<comment>]`
-//  *
-//  * Steps:
-//  * 1. Check if the sender is fully registered.
-//  * 2. Validate command parameters.
-//  * 3. Locate the target channel.
-//  * 4. Verify that the sender is a channel operator.
-//  * 5. Find the target user and remove them from the channel.
-//  * 6. Send a `KICK` message to all channel members.
-//  * 7. If the channel is empty after the kick, delete it.
-//  *
-//  * @param server Pointer to the Server object managing the IRC server.
-//  * @param fd The file descriptor of the client issuing the KICK command.
-//  * @param tokens A vector of strings representing the parsed command.
-//  * @param rawCommand The full raw command string.
-//  */
-// void handleKickCommand(Server* server, int fd,
-//                        const std::vector<std::string>& tokens,
-//                        const std::string&              rawCommand)
-// {
-//     //  Check if the sender is fully registered
-//     if (server->_clients[fd]->authState != AUTH_REGISTERED)
-//     {
-//         std::string reply = "451 :You have not registered\r\n";
-//         send(fd, reply.c_str(), reply.size(), 0);
-//         return;
-//     }
-
-//     // Validate parameters (KICK <channel> <targetNick> [:<comment>])
-//     if (tokens.size() < 3)
-//     {
-//         std::string reply = "461 KICK :Not enough parameters\r\n";
-//         send(fd, reply.c_str(), reply.size(), 0);
-//         return;
-//     }
-
-//     std::string channelName = tokens[1];
-//     std::string targetNick  = tokens[2];
-
-//     //  Parse optional comment (IRC trailing)
-//     std::string comment = "Kicked";  // Default value
-//     size_t      pos     = rawCommand.find(':');
-//     if (pos != std::string::npos)
-//     {
-//         comment = rawCommand.substr(pos + 1);  // Extract everything after
-//         ':'
-//     }
-
-//     //  Find the specified channel
-//     auto it = server->_channels.find(channelName);
-//     if (it == server->_channels.end())
-//     {
-//         std::string reply = "403 " + channelName + " :No such channel\r\n";
-//         send(fd, reply.c_str(), reply.size(), 0);
-//         return;
-//     }
-
-//     Channel& channel = it->second;
-
-//     //  Check if the sender is a channel operator
-//     if (!channel.isOperator(fd))
-//     {
-//         std::string reply =
-//             "482 " + channelName + " :You're not a channel operator\r\n";
-//         send(fd, reply.c_str(), reply.size(), 0);
-//         return;
-//     }
-
-//     //  Find the target user (optimized search)
-//     auto clientIt =
-//         std::find_if(channel.getClients().begin(),
-//         channel.getClients().end(),
-//                      [&server, &targetNick](int cli_fd)
-//                      {
-//                          auto it = server->_clients.find(cli_fd);
-//                          return it != server->_clients.end() &&
-//                                 it->second->nickname == targetNick;
-//                      });
-
-//     if (clientIt == channel.getClients().end())
-//     {
-//         std::string reply = "401 " + targetNick + " :No such
-//         nick/channel\r\n"; send(fd, reply.c_str(), reply.size(), 0); return;
-//     }
-
-//     int targetFd = *clientIt;
-
-//     //  Construct and send KICK message to all channel members
-//     std::string kickMsg = ":" + server->_clients[fd]->nickname + " KICK " +
-//                           channelName + " " + targetNick + " :" + comment +
-//                           "\r\n";
-
-//     for (int member_fd : channel.getClients())
-//     {
-//         send(member_fd, kickMsg.c_str(), kickMsg.size(), 0);
-//     }
-
-//     // Send a QUIT message to the kicked user before disconnecting
-//     std::string quitMsg = "ERROR :You were kicked from " + channelName +
-//     "\r\n"; send(targetFd, quitMsg.c_str(), quitMsg.size(), 0);
-
-//     //  Remove the user from the channel
-//     channel.removeClient(targetFd);
-//     channel.removeOperator(targetFd);
-
-//     //  Delete the channel if it becomes empty
-//     if (channel.getClients().empty())
-//     {
-//         server->_channels.erase(it);
-//     }
-// }

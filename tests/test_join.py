@@ -54,6 +54,7 @@ def flush_recv(client):
         pass
 
 def register_client(client, nick, user, realname):
+    send_command(client, f"PASS {SERVER_PASSWORD}")
     send_command(client, f"NICK {nick}")
     send_command(client, f"USER {user} 0 * :{realname}")
     time.sleep(0.5)
