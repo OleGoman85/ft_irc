@@ -9,6 +9,7 @@ import test_invite
 import test_join
 import test_file
 import test_bot
+import test_kick
 
 
 BLUE = "\033[1;34m"
@@ -66,6 +67,7 @@ def main():
         "join": test_join.run_tests,
         "file": test_file.run_tests,
         "bot": test_bot.run_tests,
+        "kick": test_kick.run_tests,
         # присобачиваем новые тесты сюда
     }
     print_banner()
