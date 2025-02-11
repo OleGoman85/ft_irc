@@ -203,9 +203,23 @@ void handleKickCommand(Server* server, int fd,
 
     // Classic format: :<kickerNick>!<user>@<host> KICK <channel> <targetNick>
     // :<comment>
-    std::string kickMsg = ":" + server->getClients()[fd]->getNickname() +
-                          "!user@localhost KICK " + channelName + " " +
-                          targetNick + " :" + comment + "\r\n";
+    Client*     c    = server->getClients()[fd].get();
+    std::string nick = c->getNickname();
+    std::string user = c->getUsername();
+    if (user.empty())
+    {
+        user = "unknown";
+    }
+    std::string host = c->getHost();
+    if (host.empty())
+    {
+        host = "localhost";
+    }
+
+    std::string kickMsg = ":" + nick + "!" + user + "@" + host + " KICK " +
+                          channelName + " " + targetNick + " :" + comment +
+                          "\r\n";
+
     for (int memFd : channelObj.getClients())
     {
         if (memFd != fd) send(memFd, kickMsg.c_str(), kickMsg.size(), 0);

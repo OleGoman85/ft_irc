@@ -79,9 +79,16 @@ void handlePartCommand(Server* server, int fd,
     std::string partMessage = tokens.size() > 2 ? tokens[2] : "Leaving";
 
     // Construct the PART message to be broadcast to all channel members
-    std::string fullPartMessage =
-        ":" + server->getClients()[fd]->getNickname() + " PART " + channelName +
-        " :" + partMessage + "\r\n";
+    Client* c = server->getClients()[fd].get();
+    std::string nick = c->getNickname();
+    std::string user = c->getUsername();
+    std::string host = c->getHost(); 
+
+    std::string prefix = ":" + nick + "!" + user + "@" + host; 
+
+    std::string fullPartMessage = prefix + 
+        " PART " + channelName + " :" + partMessage + "\r\n";
+
 
     // Notify all clients in the channel about the PART event
     for (int cli_fd : it->second.getClients())

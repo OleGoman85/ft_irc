@@ -333,7 +333,6 @@ static void broadcastModeChange(Server* server, int sourceFd, Channel& channel,
     std::ostringstream       modeStream;
     std::vector<std::string> modeParams;
 
-    // Start with the sign of the first change.
     modeStream << (changes[0].add ? "+" : "-");
     char currentGroupSign = (changes[0].add ? '+' : '-');
 
@@ -347,14 +346,21 @@ static void broadcastModeChange(Server* server, int sourceFd, Channel& channel,
         modeStream << changes[i].mode;
         if (!changes[i].param.empty()) modeParams.push_back(changes[i].param);
     }
+    Client*     sourceClient = server->getClients()[sourceFd].get();
+    std::string nick         = sourceClient->getNickname();
+    std::string user         = sourceClient->getUsername();
+    if (user.empty()) user = "unknown";
+    std::string host = sourceClient->getHost();
+    if (host.empty()) host = "localhost";
+
+    std::string prefix = ":" + nick + "!" + user + "@" + host;
 
     std::ostringstream broadcast;
-    broadcast << ":" << server->getClients()[sourceFd]->getNickname()
-              << " MODE " << channel.getName() << " " << modeStream.str();
+    broadcast << prefix << " MODE " << channel.getName() << " "
+              << modeStream.str();
     for (size_t i = 0; i < modeParams.size(); ++i)
         broadcast << " " << modeParams[i];
     broadcast << "\r\n";
-
     std::string      msg     = broadcast.str();
     std::vector<int> clients = channel.getClients();
     for (size_t i = 0; i < clients.size(); ++i) sendReply(clients[i], msg);

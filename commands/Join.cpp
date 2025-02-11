@@ -30,131 +30,88 @@
  * @param command The complete JOIN command string (unused in this
  * implementation).
  */
-void handleJoinCommand(Server* server, int fd,
+ void handleJoinCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
-                       const std::string&              command)
+                       const std::string& command)
 {
-    (void)command;  // Suppress unused parameter warning
-
-    // Check if the client is fully registered.
+    (void)command;
     if (server->getClients()[fd]->authState != AUTH_REGISTERED)
     {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // Ensure that the command has enough parameters (minimum: JOIN <channel>).
     if (tokens.size() < 2)
     {
         std::string reply = "461 JOIN :Not enough parameters\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // Extract the channel name from the command.
     std::string channelName = tokens[1];
-
-    // Ensure the channel name starts with '#'
     if (channelName.empty() || channelName[0] != '#')
     {
-        std::string reply =
-            "479 " + channelName +
-            " :Illegal channel name. Channel names must start with '#'\r\n";
+        std::string reply = "479 " + channelName + " :Illegal channel name. Channel names must start with '#'\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // Look for the channel in the server's channel map.
     auto it = server->getChannels().find(channelName);
-
     if (it != server->getChannels().end() && it->second.hasClient(fd))
     {
-        std::string reply =
-            "443 " + channelName + " :You are already in the channel\r\n";
+        std::string reply = "443 " + channelName + " :You are already in the channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // Check if this is the first user to join the channel
     bool isFirstUser = (it == server->getChannels().end());
-
     if (isFirstUser)
     {
-        // If the channel does not exist, create a new one.
-        auto emplaceResult =
-            server->getChannels().emplace(channelName, Channel(channelName));
+        auto emplaceResult = server->getChannels().emplace(channelName, Channel(channelName));
         if (!emplaceResult.second)
         {
-            std::cerr << "Failed to create channel: " << channelName
-                      << std::endl;
+            std::cerr << "Failed to create channel: " << channelName << std::endl;
             return;
         }
         it = emplaceResult.first;
     }
-
-    // Check if the channel is set to invite-only and if the client is permitted
-    // (e.g., is an operator).
-    if (it->second.isInviteOnly() && !it->second.isOperator(fd) &&
-        !it->second.isInvited(fd))
+    if (it->second.isInviteOnly() && !it->second.isOperator(fd) && !it->second.isInvited(fd))
     {
-        std::string reply =
-            "473 " + channelName + " :Cannot join channel (+i mode set)\r\n";
+        std::string reply = "473 " + channelName + " :Cannot join channel (+i mode set)\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // Check if a user limit is set and whether the channel is already full.
-    if (it->second.getUserLimit() > 0 &&
-        static_cast<int>(it->second.getClients().size()) >=
-            it->second.getUserLimit())
+    if (it->second.getUserLimit() > 0 && static_cast<int>(it->second.getClients().size()) >= it->second.getUserLimit())
     {
         std::string reply = "471 " + channelName + " :Channel is full\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
-    // (Optional) If the channel has a key (mode 'k') set, the key should be
     if (it->second.hasMode('k'))
     {
         if (tokens.size() < 3 || it->second.getChannelKey() != tokens[2])
         {
-            std::string reply = "475 " + channelName +
-                                " :Cannot join channel (+k mode set)\r\n";
+            std::string reply = "475 " + channelName + " :Cannot join channel (+k mode set)\r\n";
             send(fd, reply.c_str(), reply.size(), 0);
             return;
         }
     }
-
-    // Add the client to the channel.
     it->second.addClient(fd);
     if (it->second.isInvited(fd))
     {
         it->second.removeInvite(fd);
     }
-    // If this is the first user, assign them as an operator.
     if (isFirstUser)
     {
         it->second.addOperator(fd);
-        std::string opMsg = ":" + server->getClients()[fd]->getNickname() +
-                            " MODE " + channelName + " +o " +
-                            server->getClients()[fd]->getNickname() + "\r\n";
+        std::string opMsg = ":" + server->getClients()[fd]->getNickname() + " MODE " + channelName + " +o " + server->getClients()[fd]->getNickname() + "\r\n";
         send(fd, opMsg.c_str(), opMsg.size(), 0);
     }
-
-    // If this is the first user, send a welcome message
-    std::string welcomeMsg =
-        "NOTICE " + channelName + " :Welcome to " + channelName;
+    std::string welcomeMsg = "NOTICE " + channelName + " :Welcome to " + channelName;
     if (isFirstUser)
     {
         welcomeMsg += "! You are the first user and the operator.";
     }
     welcomeMsg += "\r\n";
     send(fd, welcomeMsg.c_str(), welcomeMsg.size(), 0);
-
-    // Send list of users to the new client
-    std::string userList = "353 " + server->getClients()[fd]->getNickname() +
-                           " = " + channelName + " :";
+    std::string userList = "353 " + server->getClients()[fd]->getNickname() + " = " + channelName + " :";
     for (int cli_fd : it->second.getClients())
     {
         if (it->second.isOperator(cli_fd))
@@ -165,27 +122,25 @@ void handleJoinCommand(Server* server, int fd,
     }
     userList += "\r\n";
     send(fd, userList.c_str(), userList.size(), 0);
-
-    // Send JOIN confirmation to the new client
-    std::string joinMsg = ":" + server->getClients()[fd]->getNickname() +
-                          " JOIN " + channelName + "\r\n";
+    Client* c = server->getClients()[fd].get();
+    std::string nick = c->getNickname();
+    std::string user = c->getUsername();
+    if (user.empty())
+        user = "unknown";
+    std::string host = c->getHost();
+    std::string prefix = ":" + nick + "!" + user + "@" + host;
+    std::string joinMsg = prefix + " JOIN " + channelName + "\r\n";
     send(fd, joinMsg.c_str(), joinMsg.size(), 0);
-
-    // Send channel topic if it is set
-    if (!it->second.getTopic().empty())
-    {
-        std::string topicMsg =
-            "332 " + server->getClients()[fd]->getNickname() + " " +
-            channelName + " :" + it->second.getTopic() + "\r\n";
-        send(fd, topicMsg.c_str(), topicMsg.size(), 0);
-    }
-
-    // Notify other clients in the channel about the new user
     for (int cli_fd : it->second.getClients())
     {
         if (cli_fd != fd)
         {
             send(cli_fd, joinMsg.c_str(), joinMsg.size(), 0);
         }
+    }
+    if (!it->second.getTopic().empty())
+    {
+        std::string topicMsg = "332 " + server->getClients()[fd]->getNickname() + " " + channelName + " :" + it->second.getTopic() + "\r\n";
+        send(fd, topicMsg.c_str(), topicMsg.size(), 0);
     }
 }

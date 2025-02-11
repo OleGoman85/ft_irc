@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/08 11:05:07 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/11 18:28:38 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,9 @@ public:
     std::string getUsername() const;
     void        setUsername(const std::string& newUsername);
 
+    std::string getHost() const;
+    void setHost(const std::string& newHost);
+
     std::string buffer;     ///< Buffer for storing incoming data.
     AuthState   authState;  ///< Current authentication state of the client.
 
@@ -63,6 +66,7 @@ private:
     int         _fd;        ///< File descriptor for the client socket.
     std::string _nickname;  ///< Client's nickname
     std::string _username;  ///< Client's username
+    std::string _host;
 };
 
 #endif  // CLIENT_HPP

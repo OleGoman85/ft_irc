@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Quit.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 10:44:47 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/05 13:03:55 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/11 18:52:21 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,19 +28,19 @@
  * @param command The complete command string received from the client (unused in this implementation).
  */
 void handleQuitCommand(Server* server, int fd, const std::vector<std::string>& /*tokens*/, const std::string& /*command*/) {
-    // Check if the client exists in the server's client map.
     if (server->getClients().find(fd) == server->getClients().end())
         return;
-    
-    // Construct the QUIT message with the client's nickname.
-    std::string quitMsg = ":" + server->getClients()[fd]->getNickname() + " QUIT :Client has quit\r\n";
-    
-    // Send the QUIT message to all other connected clients.
+    Client* c = server->getClients()[fd].get();
+    std::string nick = c->getNickname();
+    std::string user = c->getUsername();
+    if (user.empty())
+        user = "unknown";
+    std::string host = c->getHost();
+    std::string prefix = ":" + nick + "!" + user + "@" + host;
+    std::string quitMsg = prefix + " QUIT :Client has quit\r\n";
     for (const auto& pair : server->getClients()) {
         if (pair.first != fd)
             send(pair.first, quitMsg.c_str(), quitMsg.size(), 0);
     }
-    
-    // Remove the client from the server.
     server->removeClient(fd);
 }

@@ -77,16 +77,28 @@ void processInvite(Server* server, int fd, int targetFd, Channel* channel,
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
-
     channel->inviteClient(targetFd);
 
-    std::string inviteMsg = ":" + server->getClients()[fd]->getNickname() +
-                            " INVITE " + targetNick + " " + channelName +
-                            "\r\n";
+    Client*     inviter = server->getClients()[fd].get();
+    std::string nick    = inviter->getNickname();
+    std::string user    = inviter->getUsername();
+    if (user.empty())
+    {
+        user = "unknown";
+    }
+    std::string host = inviter->getHost();
+    if (host.empty())
+    {
+        host = "localhost";
+    }
+    std::string prefix = ":" + nick + "!" + user + "@" + host;
+
+    std::string inviteMsg =
+        prefix + " INVITE " + targetNick + " " + channelName + "\r\n";
     send(targetFd, inviteMsg.c_str(), inviteMsg.size(), 0);
 
-    std::string confirmMsg = "341 " + server->getClients()[fd]->getNickname() +
-                             " " + targetNick + " " + channelName + "\r\n";
+    std::string confirmMsg =
+        "341 " + nick + " " + targetNick + " " + channelName + "\r\n";
     send(fd, confirmMsg.c_str(), confirmMsg.size(), 0);
 }
 
