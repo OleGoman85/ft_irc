@@ -6,7 +6,7 @@
 /*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 08:30:21 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/11 15:17:38 by aarbenin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -499,8 +499,9 @@ Server::Server(int port, const std::string& password)
       _listen_fd(-1),  // Sets the file descriptor for the listening socket.
       _poll_fds(),
       _password(password),  // Sets the value of _password.
-      _clients(),  // Initializes the _clients map to hold connected clients.
-      _channels()  // Initializes the _channels map to hold channels.
+      _clients(),   // Initializes the _clients map to hold connected clients.
+      _channels(),  // Initializes the _channels map to hold channels.
+      _serverName("AwesomeIRC")
 {
     setupServer();
 }  // The setupServer method sets up the server socket for operation.
@@ -913,6 +914,16 @@ void Server::processCommand(int fd, const std::string& command)
     {
         handleBotCommand(this, fd, tokens, command);
     }
+    else if (cmd == "PING")
+    {
+        std::string pong = "PONG ";
+        if (tokens.size() > 1) pong += tokens[1];
+        pong += "\r\n";
+        send(fd, pong.c_str(), pong.size(), 0);
+        std::cout << "Sending: "
+                  << pong;  //  просто проверяю наш понг, не забыть удалить!
+    }
+
     else
     {
         std::string reply = "421 " + cmd + " :Unknown command\r\n";
@@ -943,6 +954,11 @@ std::map<std::string, Channel>& Server::getChannels()
 std::map<std::string, FileTransfer>& Server::getFileTransfers()
 {
     return _fileTransfers;
+}
+
+const std::string& Server::getServerName() const
+{
+    return _serverName;
 }
 
 //! POOL
