@@ -222,3 +222,4 @@ join #cde
 
 341 - Invite sent
 → "341 <senderNick> <targetNick> <channelName>"
+

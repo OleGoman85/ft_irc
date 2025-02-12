@@ -6,7 +6,7 @@
 /*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 11:30:54 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/12 13:05:54 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/12 13:35:37 by aarbenin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,16 +15,21 @@
 #include "../include/Replies.hpp"
 #include "../include/Server.hpp"
 
-static void broadcastNickChange(Server* server, Client* client,
-                                const std::string& oldNick,
+static void broadcastNickChange(Server* server, Client* client, 
+                                const std::string& oldNick, 
                                 const std::string& newNick)
 {
-    std::string message = ":" + oldNick + "!" + client->getUsername() + "@" +
-                          client->getHost() + " NICK :" + newNick + "\r\n";
+
+    std::string message =
+        ":" + oldNick + "!" 
+        + client->getUsername() + "@" + client->getHost() 
+        + " NICK :" + newNick + "\r\n";
 
     int fd = client->getFd();
-    for (std::map<std::string, Channel>::iterator it =
-             server->getChannels().begin();
+
+    send(fd, message.c_str(), message.size(), 0);
+
+    for (std::map<std::string, Channel>::iterator it = server->getChannels().begin();
          it != server->getChannels().end(); ++it)
     {
         Channel& chan = it->second;
@@ -39,6 +44,7 @@ static void broadcastNickChange(Server* server, Client* client,
         }
     }
 }
+
 
 void handleNickCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
