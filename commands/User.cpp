@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   User.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 11:31:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 14:49:11 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/12 10:12:02 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,9 +37,14 @@
  * in this implementation).
  */
 
+#include "User.hpp"
+#include "../include/Replies.hpp"
+#include "../include/Server.hpp"
+#include <sstream>
+
 void handleUserCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
-                       const std::string& /*command*/)
+                       const std::string& command)
 {
     if (tokens.size() < 5)
     {
@@ -48,9 +53,20 @@ void handleUserCommand(Server* server, int fd,
         return;
     }
 
+
     server->getClients()[fd]->setUsername(tokens[1]);
 
+    size_t colonPos = command.find(':');
+    std::string realName;
+    if (colonPos != std::string::npos) {
+        realName = command.substr(colonPos + 1);
+    } else {
+        realName = "";
+    }
+    server->getClients()[fd]->setRealName(realName);
+
     AuthState& st = server->getClients()[fd]->authState;
+
     if (st == WAITING_FOR_USER)
     {
         st = AUTH_REGISTERED;

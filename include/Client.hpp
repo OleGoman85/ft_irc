@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 18:28:38 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/12 10:02:47 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,9 @@ public:
     std::string getHost() const;
     void setHost(const std::string& newHost);
 
+    std::string getRealName() const;
+    void        setRealName(const std::string& realName);
+
     std::string buffer;     ///< Buffer for storing incoming data.
     AuthState   authState;  ///< Current authentication state of the client.
 
@@ -67,6 +70,7 @@ private:
     std::string _nickname;  ///< Client's nickname
     std::string _username;  ///< Client's username
     std::string _host;
+    std::string _realName;
 };
 
 #endif  // CLIENT_HPP

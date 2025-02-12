@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:57 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 18:30:27 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/12 10:05:16 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,8 @@ Client::Client(int fd)
       _fd(fd),        // Initialize the file descriptor first as declared.
       _nickname(""),  // Initialize nickname as an empty string.
       _username(""),   // Initialize username as an empty string.
-      _host("localhost")
+      _host("localhost"),
+      _realName("")
 {
 }
 
@@ -71,6 +72,15 @@ void Client::setHost(const std::string& newHost)
 {
     _host = newHost;
 }
+
+std::string Client::getRealName() const {
+    return _realName;
+}
+
+void Client::setRealName(const std::string& realName) {
+    _realName = realName;
+}
+
 
 //!
 /*

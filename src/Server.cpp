@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 15:17:38 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/12 10:01:24 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -482,6 +482,9 @@ _clients и _poll_fds.
 #include "../commands/Quit.hpp"
 #include "../commands/Topic.hpp"
 #include "../commands/User.hpp"
+#include "../commands/Who.hpp"
+#include "../commands/Whois.hpp"
+#include "../commands/List.hpp"
 #include "../include/Utils.hpp"
 
 /**
@@ -923,7 +926,18 @@ void Server::processCommand(int fd, const std::string& command)
         std::cout << "Sending: "
                   << pong;  //  просто проверяю наш понг, не забыть удалить!
     }
-
+        else if (cmd == "WHO")
+    {
+        handleWhoCommand(this, fd, tokens, command);
+    }
+    else if (cmd == "WHOIS")
+    {
+        handleWhoisCommand(this, fd, tokens, command);
+    }
+    else if (cmd == "LIST")
+    {
+        handleListCommand(this, fd, tokens, command);
+    }
     else
     {
         std::string reply = "421 " + cmd + " :Unknown command\r\n";
