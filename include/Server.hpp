@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:42:09 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 14:36:28 by aarbenin         ###   ########.fr       */
+/*   Updated: 2025/02/12 12:48:00 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,6 +102,9 @@ public:
 
     std::map<std::string, FileTransfer>& getFileTransfers();
     const std::string&                   getServerName() const;
+    
+    /// Safe send function that buffers data if the socket is not writable.
+    void safeSend(int fd, const std::string& message);
 
 private:
     int _port;       ///< The port number on which the server listens.

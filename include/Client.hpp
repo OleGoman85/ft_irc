@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:13 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/12 10:02:47 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/12 12:45:29 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ public:
     std::string getRealName() const;
     void        setRealName(const std::string& realName);
 
+    std::string outBuffer;   /// < Output buffer for storing unsent outgoing data.
     std::string buffer;     ///< Buffer for storing incoming data.
     AuthState   authState;  ///< Current authentication state of the client.
 

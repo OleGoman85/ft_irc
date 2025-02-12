@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:46:57 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/12 10:05:16 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/12 12:54:34 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,9 @@
  * @param fd The file descriptor for the client's connection.
  */
 Client::Client(int fd)
-    : buffer(""),  // Initialize the incoming data buffer as empty.
+    : outBuffer(""), // NEW: Initialize output buffer as empty.
+      buffer(""),  // Initialize the incoming data buffer as empty.
+    //   outBuffer(""), // NEW: Initialize output buffer as empty.
       authState(NOT_REGISTERED),  // Set initial authentication state to
                                   // NOT_REGISTERED.
       _fd(fd),        // Initialize the file descriptor first as declared.
