@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:47:36 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/04 12:11:23 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/08 11:24:46 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 class Channel
 {
 public:
+    Channel();  
     /**
      * @brief Constructs a new Channel object.
      *
@@ -220,6 +221,7 @@ private:
                      ///< means no limit).
 
     std::set<int> _invitedClients;
+    
 };
 
 #endif  // CHANNEL_HPP

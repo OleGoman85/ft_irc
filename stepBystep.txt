@@ -158,21 +158,21 @@ irssi -c localhost -p 6667 -w 123
 
 
 
-pass mypassword
+pass password
 nick Alisa
 user Alisa 0 * :Alisa the Great
 join #cde
 
 
 
-pass mypassword
+pass password
 nick Masha
 user Masha 0 * :Masha the Cat
 join #cde
 
 
 
-pass mypassword
+pass password
 nick Oleg
 user Oleg 0 * :Oleg the Bold Guy
 join #cde

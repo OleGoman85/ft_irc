@@ -1,3 +1,4 @@
 __pycache__/
 .vscode/
 objects/
+.DS_Store/

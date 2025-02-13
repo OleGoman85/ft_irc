@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Pass.hpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 10:43:25 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/16 09:59:19 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/09 20:13:47 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,15 +24,20 @@ class Server;
 /**
  * @brief Handles the PASS command.
  *
- * This function processes the PASS command issued by a client. It verifies the supplied password against the server's password.
- * If the provided password is correct, the client's authentication state is updated (typically to WAITING_FOR_NICK), and a success message is sent.
- * Otherwise, an error message is returned and the client is removed from the server.
+ * This function processes the PASS command issued by a client. It verifies the
+ * supplied password against the server's password. If the provided password is
+ * correct, the client's authentication state is updated (typically to
+ * WAITING_FOR_NICK), and a success message is sent. Otherwise, an error message
+ * is returned and the client is removed from the server.
  *
  * @param server Pointer to the Server object managing the IRC server.
  * @param fd The file descriptor of the client issuing the PASS command.
- * @param tokens A vector of strings containing the tokenized command arguments (expected format: "PASS" followed by <password>).
+ * @param tokens A vector of strings containing the tokenized command arguments
+ * (expected format: "PASS" followed by <password>).
  * @param command The complete command string received from the client.
  */
-void handlePassCommand(Server* server, int fd, const std::vector<std::string>& tokens, const std::string& command);
+void handlePassCommand(Server* server, int fd,
+                       const std::vector<std::string>& tokens,
+                       const std::string&              command);
 
-#endif // PASS_HPP
+#endif  // PASS_HPP
