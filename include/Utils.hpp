@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:48:47 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/09 19:37:43 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/13 08:08:07 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,8 @@ namespace Utils
  * substrings.
  */
 std::vector<std::string> split(const std::string& str, char delimiter);
+std::string getTimestamp();
+
 }  // namespace Utils
 
 #endif  // UTILS_HPP

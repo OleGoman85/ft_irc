@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/12 13:05:59 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/13 08:09:18 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -885,7 +885,7 @@ void Server::broadcastMessage(const std::string& message, int sender_fd)
  */
 void Server::processCommand(int fd, const std::string& command)
 {
-    std::cout << "Command from fd " << fd << ": " << command << std::endl;
+    std::cout << Utils::getTimestamp() << "Command from fd " << fd << ": " << command << std::endl;
     std::vector<std::string> tokens = Utils::split(command, ' ');
     if (tokens.empty()) return;
 
@@ -894,52 +894,40 @@ void Server::processCommand(int fd, const std::string& command)
 
     if (cmd == "PASS")
     {
-        if (getClients()[fd]->authState != NOT_REGISTERED)
-        {
-            std::string reply = "462 :You may not reregister\r\n";
-            send(fd, reply.c_str(), reply.size(), 0);
+         if (getClients()[fd]->authState != NOT_REGISTERED) {
+            mayNotRegistered(fd);
             return;
         }
         handlePassCommand(this, fd, tokens, command);
     }
     else if (cmd == "NICK")
     {
-        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
-        {
-            std::string err = "464 :Password required\r\n";
-            send(fd, err.c_str(), err.size(), 0);
-            removeClient(fd);
+        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
+            passRequired(fd);
             return;
         }
         handleNickCommand(this, fd, tokens, command);
     }
     else if (cmd == "USER")
     {
-        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
-        {
-            std::string err = "464 :Password required\r\n";
-            send(fd, err.c_str(), err.size(), 0);
-            removeClient(fd);
+        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
+            passRequired(fd);
             return;
         }
         handleUserCommand(this, fd, tokens, command);
     }
     else if (cmd == "JOIN")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handleJoinCommand(this, fd, tokens, command);
     }
     else if (cmd == "PRIVMSG")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handlePrivmsgCommand(this, fd, tokens, command);
@@ -950,50 +938,40 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "PART")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handlePartCommand(this, fd, tokens, command);
     }
     else if (cmd == "KICK")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handleKickCommand(this, fd, tokens, command);
     }
     else if (cmd == "INVITE")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handleInviteCommand(this, fd, tokens, command);
     }
     else if (cmd == "TOPIC")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handleTopicCommand(this, fd, tokens, command);
     }
     else if (cmd == "MODE")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
-            std::string err = "451 :You have not registered\r\n";
-            send(fd, err.c_str(), err.size(), 0);
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+            notRegistered(fd);
             return;
         }
         handleModeCommand(this, fd, tokens, command);
@@ -1068,6 +1046,25 @@ const std::string& Server::getServerName() const
 {
     return _serverName;
 }
+
+void Server::mayNotRegistered(int fd) {
+    if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED){
+        std::string reply = "462 :You may not reregister\r\n";
+        safeSend(fd, reply);
+    }
+}
+
+void Server::passRequired(int fd) {
+    std::string err = "464 :Password required\r\n";
+    safeSend(fd, err);
+    removeClient(fd);
+}
+
+void Server::notRegistered(int fd) {
+    std::string err = "451 :You have not registered\r\n";
+    safeSend(fd, err);
+}
+
 
 //! POOL
 /*

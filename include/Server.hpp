@@ -6,7 +6,7 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:42:09 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/12 12:48:00 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/13 06:39:11 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,10 @@ public:
     
     /// Safe send function that buffers data if the socket is not writable.
     void safeSend(int fd, const std::string& message);
+
+    void passRequired(int fd);
+    void mayNotRegistered(int fd);
+    void notRegistered(int fd);
 
 private:
     int _port;       ///< The port number on which the server listens.
