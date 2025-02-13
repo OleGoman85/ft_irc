@@ -1,46 +1,85 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Quit.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/14 10:44:47 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 18:52:21 by alisa            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Quit.hpp"
-#include "../include/Server.hpp"
+
+#include <sstream>
 #include <string>
+#include <vector>
+
+#include "../include/Channel.hpp"
+#include "../include/Client.hpp"
+#include "../include/Server.hpp"
 
 /**
  * @brief Handles the QUIT command from a client.
  *
- * This function processes the QUIT command, which is issued by a client to disconnect from the server.
- * It first checks if the client exists in the server's client map. If so, it constructs a QUIT message 
- * (indicating that the client has quit) and sends it to all other connected clients. Finally, it removes 
- * the client from the server.
+ * This function processes the QUIT command by:
+ * - Building a quit message (combining all tokens after the command).
+ * - Sending the QUIT message to all clients sharing channels with the quitting
+ * client.
+ * - Removing the client from all channels (and erasing empty channels).
+ * - Sending the QUIT message to the client.
+ * - Removing the client from the server.
  *
- * @param server Pointer to the Server object managing the IRC server.
- * @param fd The file descriptor of the client that issued the QUIT command.
- * @param tokens A vector of strings representing the tokenized command arguments (unused in this implementation).
- * @param command The complete command string received from the client (unused in this implementation).
+ * @param server Pointer to the Server instance.
+ * @param fd The file descriptor of the quitting client.
+ * @param tokens The parsed command tokens (e.g. "QUIT", "reason ...").
+ * @param command The full command string (unused).
  */
-void handleQuitCommand(Server* server, int fd, const std::vector<std::string>& /*tokens*/, const std::string& /*command*/) {
-    if (server->getClients().find(fd) == server->getClients().end())
-        return;
-    Client* c = server->getClients()[fd].get();
-    std::string nick = c->getNickname();
-    std::string user = c->getUsername();
-    if (user.empty())
-        user = "unknown";
-    std::string host = c->getHost();
+void handleQuitCommand(Server* server, int fd,
+                       const std::vector<std::string>& tokens,
+                       const std::string& /*command*/)
+{
+    if (server->getClients().find(fd) == server->getClients().end()) return;
+
+    Client*     client = server->getClients()[fd].get();
+    std::string nick   = client->getNickname();
+    std::string user =
+        client->getUsername().empty() ? "unknown" : client->getUsername();
+    std::string host = client->getHost();
+
     std::string prefix = ":" + nick + "!" + user + "@" + host;
-    std::string quitMsg = prefix + " QUIT :Client has quit\r\n";
-    for (const auto& pair : server->getClients()) {
-        if (pair.first != fd)
-            send(pair.first, quitMsg.c_str(), quitMsg.size(), 0);
+
+    std::string quitReason;
+    if (tokens.size() > 1)
+    {
+        std::ostringstream oss;
+        for (size_t i = 1; i < tokens.size(); ++i)
+        {
+            if (i > 1) oss << " ";
+            oss << tokens[i];
+        }
+        quitReason = oss.str();
     }
+    else
+    {
+        quitReason = "Client has quit";
+    }
+
+    std::string              quitMsg = prefix + " QUIT :" + quitReason + "\r\n";
+    std::vector<std::string> channelsToRemove;
+
+    for (auto& pair : server->getChannels())
+    {
+        Channel& chan = pair.second;
+        if (chan.hasClient(fd))
+        {
+            for (int cli_fd : chan.getClients())
+            {
+                if (cli_fd != fd)
+                {
+                    send(cli_fd, quitMsg.c_str(), quitMsg.size(), 0);
+                }
+            }
+            chan.removeClient(fd);
+            if (chan.getClients().empty())
+            {
+                channelsToRemove.push_back(pair.first);
+            }
+        }
+    }
+    for (const std::string& chanName : channelsToRemove)
+    {
+        server->getChannels().erase(chanName);
+    }
+    send(fd, quitMsg.c_str(), quitMsg.size(), 0);
     server->removeClient(fd);
 }
