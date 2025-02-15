@@ -6,7 +6,7 @@
 /*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/15 14:42:13 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/15 18:25:54 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -932,21 +932,37 @@ void Server::handleClientData(int fd)
 }
 
 /**
- * @brief Removes a client from the server.
+ * @brief Removes a client from the server and cleans up associated resources.
  *
- * Closes the client socket, removes the client from the server's client map,
- * and removes the corresponding poll descriptor from the poll vector.
+ * This function performs the following actions:
+ * - Removes the client from all channels they were part of.
+ * - If any channel becomes empty after removing the client, that channel is
+ * deleted from the server.
+ * - Closes the client socket.
+ * - Removes the client from the server's client map.
+ * - Removes the client's file descriptor from the poll descriptor vector.
+ *
+ * This ensures that no stale channels or clients remain after disconnection.
  *
  * @param fd File descriptor of the client to be removed.
  */
+
 void Server::removeClient(int fd)
 {
     for (std::map<std::string, Channel>::iterator it = _channels.begin();
-         it != _channels.end(); ++it)
+         it != _channels.end();)
     {
         it->second.removeClient(fd);
+        if (it->second.getClients().empty())
+        {
+            std::map<std::string, Channel>::iterator eraseIt = it++;
+            _channels.erase(eraseIt);
+        }
+        else
+        {
+            ++it;
+        }
     }
-
     close(fd);
     getClients().erase(fd);
     for (size_t i = 0; i < _poll_fds.size(); ++i)
