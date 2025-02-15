@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
+/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/12 13:05:59 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/15 14:42:13 by alisa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -470,10 +470,12 @@ _clients и _poll_fds.
 #include <stdexcept>
 
 #include "../commands/BotCommand.hpp"
+#include "../commands/Cap.hpp"
 #include "../commands/FileCommand.hpp"
 #include "../commands/Invite.hpp"
 #include "../commands/Join.hpp"
 #include "../commands/Kick.hpp"
+#include "../commands/List.hpp"
 #include "../commands/Mode.hpp"
 #include "../commands/Nick.hpp"
 #include "../commands/Part.hpp"
@@ -482,37 +484,43 @@ _clients и _poll_fds.
 #include "../commands/Quit.hpp"
 #include "../commands/Topic.hpp"
 #include "../commands/User.hpp"
-#include "../commands/Cap.hpp"
 #include "../commands/Who.hpp"
 #include "../commands/Whois.hpp"
-#include "../commands/List.hpp"
 #include "../include/Utils.hpp"
-
-
 
 /**
  * @brief Flushes the output buffer for a client.
  *
- * This function attempts to send all pending data stored in the client's outBuffer.
- * It repeatedly calls send() until the buffer is empty or the socket is not ready for writing.
- * If send() returns an error other than EAGAIN/EWOULDBLOCK, the client is removed.
+ * This function attempts to send all pending data stored in the client's
+ * outBuffer. It repeatedly calls send() until the buffer is empty or the socket
+ * is not ready for writing. If send() returns an error other than
+ * EAGAIN/EWOULDBLOCK, the client is removed.
  *
  * @param server Pointer to the Server instance.
- * @param fd The file descriptor of the client whose output buffer is to be flushed.
+ * @param fd The file descriptor of the client whose output buffer is to be
+ * flushed.
  */
-static void flushClientOutBuffer(Server* server, int fd) {
+static void flushClientOutBuffer(Server* server, int fd)
+{
     auto& clients = server->getClients();
     if (clients.find(fd) == clients.end())
-        return; // Client not found, nothing to flush.
+        return;  // Client not found, nothing to flush.
     Client* client = clients[fd].get();
     // Continue sending until outBuffer is empty or socket is not writable.
-    while (!client->outBuffer.empty()) {
-        ssize_t sent = send(fd, client->outBuffer.c_str(), client->outBuffer.size(), 0);
-        if (sent < 0) {
-            // If the socket is not ready for writing, exit the loop and try later.
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    while (!client->outBuffer.empty())
+    {
+        ssize_t sent =
+            send(fd, client->outBuffer.c_str(), client->outBuffer.size(), 0);
+        if (sent < 0)
+        {
+            // If the socket is not ready for writing, exit the loop and try
+            // later.
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
                 break;
-            } else {
+            }
+            else
+            {
                 // For any other error, remove the client from the server.
                 server->removeClient(fd);
                 return;
@@ -526,41 +534,46 @@ static void flushClientOutBuffer(Server* server, int fd) {
 /**
  * @brief Sends data to a client safely.
  *
- * This function first attempts to flush any pending data in the client's outBuffer.
- * Then it tries to send the new message immediately. If the socket cannot send all
- * the data (or is not ready for writing), the unsent portion is appended to the client's outBuffer.
- * This ensures that no data is lost even if the client is not immediately ready to receive it.
+ * This function first attempts to flush any pending data in the client's
+ * outBuffer. Then it tries to send the new message immediately. If the socket
+ * cannot send all the data (or is not ready for writing), the unsent portion is
+ * appended to the client's outBuffer. This ensures that no data is lost even if
+ * the client is not immediately ready to receive it.
  *
- * @param fd The file descriptor of the client to which the message is to be sent.
+ * @param fd The file descriptor of the client to which the message is to be
+ * sent.
  * @param message The message to send.
  */
-void Server::safeSend(int fd, const std::string& message) 
+void Server::safeSend(int fd, const std::string& message)
 {
     auto& clients = getClients();
-    if (clients.find(fd) == clients.end())
-        return; // Client not found.
+    if (clients.find(fd) == clients.end()) return;  // Client not found.
     Client* client = clients[fd].get();
 
     // Attempt to flush any previously buffered data.
     flushClientOutBuffer(this, fd);
-    
+
     // Try to send the new message.
     ssize_t sent = send(fd, message.c_str(), message.size(), 0);
-    if (sent < 0) {
+    if (sent < 0)
+    {
         // If the socket is not ready for writing, buffer the entire message.
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
             client->outBuffer += message;
-        } else {
+        }
+        else
+        {
             // On other errors, remove the client.
             removeClient(fd);
         }
-    } else if (static_cast<size_t>(sent) < message.size()) {
+    }
+    else if (static_cast<size_t>(sent) < message.size())
+    {
         // If only part of the message was sent, buffer the remaining part.
         client->outBuffer += message.substr(sent);
     }
 }
-
-
 
 /**
  * @brief Server constructor.
@@ -658,41 +671,54 @@ void Server::setupServer()
  * handleClientData() for existing clients.
  */
 
-void Server::run() {
+void Server::run()
+{
     // Main event loop – runs indefinitely while the server is active.
-    while (true) {
-
-        // Update the poll events for each client socket (skip the listening socket at index 0).
-        // If a client's outBuffer is non-empty, add POLLOUT to monitor writability.
-        for (size_t i = 1; i < _poll_fds.size(); ++i) { 
-            int fd = _poll_fds[i].fd;
+    while (true)
+    {
+        // Update the poll events for each client socket (skip the listening
+        // socket at index 0). If a client's outBuffer is non-empty, add POLLOUT
+        // to monitor writability.
+        for (size_t i = 1; i < _poll_fds.size(); ++i)
+        {
+            int   fd      = _poll_fds[i].fd;
             auto& clients = getClients();
             // Check if the client still exists in the clients map.
-            if (clients.find(fd) != clients.end()) {
+            if (clients.find(fd) != clients.end())
+            {
                 Client* client = clients[fd].get();
-                // If there is no pending output data, only check for incoming data (POLLIN).
-                // Otherwise, also check if the socket is ready to write (POLLOUT).
-                _poll_fds[i].events = client->outBuffer.empty() ? POLLIN : (POLLIN | POLLOUT);
+                // If there is no pending output data, only check for incoming
+                // data (POLLIN). Otherwise, also check if the socket is ready
+                // to write (POLLOUT).
+                _poll_fds[i].events =
+                    client->outBuffer.empty() ? POLLIN : (POLLIN | POLLOUT);
             }
         }
 
-        // Call poll() with a timeout of 100 milliseconds to monitor all file descriptors.
+        // Call poll() with a timeout of 100 milliseconds to monitor all file
+        // descriptors.
         int poll_count = poll(_poll_fds.data(), _poll_fds.size(), 100);
-        if (poll_count < 0) {
+        if (poll_count < 0)
+        {
             std::cerr << "poll error\n";
-            continue;  // If poll returns an error, log it and continue to the next iteration.
+            continue;  // If poll returns an error, log it and continue to the
+                       // next iteration.
         }
 
         // Process each file descriptor that has triggered an event.
-        for (size_t i = 0; i < _poll_fds.size(); ++i) {
+        for (size_t i = 0; i < _poll_fds.size(); ++i)
+        {
             // If the socket is ready for writing (POLLOUT is set),
             // flush the client's outBuffer.
-            if (_poll_fds[i].revents & POLLOUT) {
+            if (_poll_fds[i].revents & POLLOUT)
+            {
                 flushClientOutBuffer(this, _poll_fds[i].fd);
             }
             // If the socket is ready for reading (POLLIN is set):
-            if (_poll_fds[i].revents & POLLIN) {
-                // If the event is on the listening socket, accept a new connection.
+            if (_poll_fds[i].revents & POLLIN)
+            {
+                // If the event is on the listening socket, accept a new
+                // connection.
                 if (_poll_fds[i].fd == _listen_fd)
                     acceptNewConnection();
                 else
@@ -702,7 +728,6 @@ void Server::run() {
         }
     }
 }
-
 
 /**
  * @brief Accepts a new client connection.
@@ -780,26 +805,96 @@ void Server::acceptNewConnection()
  *
  * @param fd File descriptor of the client.
  */
+// void Server::handleClientData(int fd)
+// {
+//     char buffer[512];
+//     int  bytes_received = recv(fd, buffer, sizeof(buffer), 0);
+//     if (bytes_received <= 0)
+//     {
+//         if (bytes_received == 0)
+//             std::cout << "Client (fd: " << fd << ") disconnected\n";
+//         else
+//             std::cerr << "recv error on fd " << fd << "\n";
+//         removeClient(fd);
+//         return;
+//     }
+//     // Append received data to the client's buffer.
+//     getClients()[fd]->buffer.append(buffer, bytes_received);
+
+//     size_t pos;
+//     while (true)
+//     {
+//         // Search for the command delimiter "\r\n" (or "\n" as fallback).
+//         pos = getClients()[fd]->buffer.find("\r\n");
+//         if (pos == std::string::npos)
+//         {
+//             pos = getClients()[fd]->buffer.find("\n");
+//             if (pos != std::string::npos && pos > 0 &&
+//                 getClients()[fd]->buffer[pos - 1] == '\r')
+//             {
+//                 pos -= 1;
+//             }
+//         }
+//         // If no delimiter is found, break out of the loop.
+//         if (pos == std::string::npos) break;
+
+//         // Extract the command up to the delimiter.
+//         std::string command = getClients()[fd]->buffer.substr(0, pos);
+
+//         // Remove the command and its delimiter from the buffer.
+//         if (getClients()[fd]->buffer.substr(pos, 2) == "\r\n")
+//             getClients()[fd]->buffer.erase(0, pos + 2);
+//         else
+//             getClients()[fd]->buffer.erase(0, pos + 1);
+
+//         // Trim whitespace from the beginning and end of the command.
+//         command.erase(0, command.find_first_not_of(" \t"));
+//         command.erase(command.find_last_not_of(" \t") + 1);
+
+//         processCommand(fd, command);
+//         if (getClients().find(fd) == getClients().end()) break;
+//     }
+// }
+
+/**
+ * @brief Handles incoming data from a client.
+ *
+ * Reads data from the client socket in a non-blocking manner.
+ * Aggregates the data in the client's buffer, and when a complete command
+ * (terminated by "\r\n" or "\n") is received, it extracts and processes the
+ * command.
+ *
+ * If the client disconnects (recv returns 0), any complete commands in the
+ * buffer are processed before the client is removed.
+ *
+ * @param fd File descriptor of the client.
+ */
 void Server::handleClientData(int fd)
 {
     char buffer[512];
     int  bytes_received = recv(fd, buffer, sizeof(buffer), 0);
-    if (bytes_received <= 0)
+
+    if (bytes_received < 0)
     {
-        if (bytes_received == 0)
-            std::cout << "Client (fd: " << fd << ") disconnected\n";
-        else
+        if (errno != EAGAIN && errno != EWOULDBLOCK)
+        {
             std::cerr << "recv error on fd " << fd << "\n";
-        removeClient(fd);
+            removeClient(fd);
+        }
         return;
     }
-    // Append received data to the client's buffer.
+
+    std::cout << "[INFO] Received from fd " << fd << ": "
+              << std::string(buffer, bytes_received) << "\n";
+
     getClients()[fd]->buffer.append(buffer, bytes_received);
+
+    std::cout << "[INFO] Buffer for fd " << fd << ": \""
+              << getClients()[fd]->buffer << "\"\n";
 
     size_t pos;
     while (true)
     {
-        // Search for the command delimiter "\r\n" (or "\n" as fallback).
         pos = getClients()[fd]->buffer.find("\r\n");
         if (pos == std::string::npos)
         {
@@ -810,24 +905,29 @@ void Server::handleClientData(int fd)
                 pos -= 1;
             }
         }
-        // If no delimiter is found, break out of the loop.
         if (pos == std::string::npos) break;
 
-        // Extract the command up to the delimiter.
         std::string command = getClients()[fd]->buffer.substr(0, pos);
-
-        // Remove the command and its delimiter from the buffer.
         if (getClients()[fd]->buffer.substr(pos, 2) == "\r\n")
             getClients()[fd]->buffer.erase(0, pos + 2);
         else
             getClients()[fd]->buffer.erase(0, pos + 1);
 
-        // Trim whitespace from the beginning and end of the command.
         command.erase(0, command.find_first_not_of(" \t"));
         command.erase(command.find_last_not_of(" \t") + 1);
 
-        processCommand(fd, command);
-        if (getClients().find(fd) == getClients().end()) break;
+        std::cout << "[INFO] Processing command from fd " << fd << ": \""
+                  << command << "\"\n";
+
+        if (!command.empty()) processCommand(fd, command);
+
+        if (getClients().find(fd) == getClients().end()) return;
+    }
+
+    if (bytes_received == 0)
+    {
+        std::cout << "Client (fd: " << fd << ") disconnected\n";
+        removeClient(fd);
     }
 }
 
@@ -841,6 +941,12 @@ void Server::handleClientData(int fd)
  */
 void Server::removeClient(int fd)
 {
+    for (std::map<std::string, Channel>::iterator it = _channels.begin();
+         it != _channels.end(); ++it)
+    {
+        it->second.removeClient(fd);
+    }
+
     close(fd);
     getClients().erase(fd);
     for (size_t i = 0; i < _poll_fds.size(); ++i)
@@ -1012,10 +1118,9 @@ void Server::processCommand(int fd, const std::string& command)
         if (tokens.size() > 1) pong += tokens[1];
         pong += "\r\n";
         send(fd, pong.c_str(), pong.size(), 0);
-        std::cout << "Sending: "
-                  << pong;
+        std::cout << "Sending: " << pong;
     }
-        else if (cmd == "WHO")
+    else if (cmd == "WHO")
     {
         handleWhoCommand(this, fd, tokens, command);
     }
@@ -1027,7 +1132,7 @@ void Server::processCommand(int fd, const std::string& command)
     {
         handleListCommand(this, fd, tokens, command);
     }
-        else if (cmd == "CAP") 
+    else if (cmd == "CAP")
     {
         handleCapCommand(this, fd, tokens, command);
     }
