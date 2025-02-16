@@ -6,12 +6,15 @@
 /*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:49:17 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/16 09:44:38 by ogoman           ###   ########.fr       */
+/*   Updated: 2025/02/13 08:33:03 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Utils.hpp"
 #include <sstream> // for std::stringstream and std::getline
+#include <chrono>
+#include <iomanip>
+#include <string>
 
 /**
  * @brief Splits a string using a specified delimiter.
@@ -35,6 +38,18 @@ std::vector<std::string> Utils::split(const std::string& str, char delimiter)
         tokens.push_back(token);
     }
     return tokens;
+}
+
+
+std::string Utils::getTimestamp() 
+{
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << "\033[1;32m[" 
+       << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X")
+       << "]\033[0m ";
+    return ss.str();
 }
 
 
