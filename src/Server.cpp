@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 12:43:31 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/16 09:12:12 by alisa            ###   ########.fr       */
+/*   Updated: 2025/02/17 10:24:22 by ogoman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1007,7 +1007,12 @@ void Server::broadcastMessage(const std::string& message, int sender_fd)
  */
 void Server::processCommand(int fd, const std::string& command)
 {
-    std::cout << Utils::getTimestamp() << "Command from fd " << fd << ": " << command << std::endl;
+    // std::cout << Utils::getTimestamp() << "Command from fd " << fd << ": " << command << std::endl;
+    std::cout << "\033[1;32m"
+          << Utils::getTimestamp()
+          << "Command from fd " << fd << ": " << command
+          << "\033[0m"
+          << std::endl;
     std::vector<std::string> tokens = Utils::split(command, ' ');
     if (tokens.empty()) return;
 
