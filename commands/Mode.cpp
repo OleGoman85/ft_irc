@@ -393,6 +393,22 @@ void handleModeCommand(Server* server, int fd,
     }
 
     std::string channelName = tokens[1];
+
+    if (!channelName.empty() && channelName[0] != '#')
+    {
+        std::string myNick = server->getClients()[fd]->getNickname();
+        if (channelName != myNick)
+        {
+            // 502: "Cannot change mode for other users"
+            sendReply(fd, "502 " + channelName + " :Cannot change mode for other users\r\n");
+            return;
+        }
+        std::string notice = "NOTICE " + myNick + " :User modes not used on this server\r\n";
+        sendReply(fd, notice);
+
+        return;
+    }
+
     Channel*    channel     = getChannel(server, fd, channelName);
     if (!channel) return;
 
