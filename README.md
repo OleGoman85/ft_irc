@@ -1,24 +1,24 @@
 
 
-# ft_irc
+# ft_irc 🐲🔥
 
-**ft_irc** is the most ultracool IRC server ever built in **C++17**! It’s an unstoppable force of networking mastery capable of real-time messaging, dynamic channel management, a file transfer feature, and a life-altering bot that divides your time into “Before Bot” and “After Bot.” Seriously... it can even tell you the time! 🐉
+**ft_irc** is the most ultracool IRC server ever built in **C++17**! It’s an unstoppable force of networking mastery  capable of real-time messaging, dynamic channel management, a file transfer feature, and a life-altering bot that divides your time into “Before Bot” and “After Bot.” Seriously... it can even tell you the time! 
 
 ---
 
-## Table of Contents
+## Table of contents
 
 - [Introduction](#introduction)
 - [Features](#features)
 - [Installation](#installation)
-- [Usage \& Testing](#usage--testing)
+- [Usage \& testing](#usage--testing)
 - [Commands](#commands)
-  - [Client Commands](#client-commands)
-  - [Channel \& Operator Commands](#channel--operator-commands)
-  - [Bot Commands](#bot-commands)
-  - [File Transfer Commands](#file-transfer-commands)
+  - [Client commands](#client-commands)
+  - [Channel \& operator commands](#channel--operator-commands)
+  - [Bot commands](#bot-commands)
+  - [File transfer commands](#file-transfer-commands)
 - [Architecture](#architecture)
-- [Credits \& License](#credits--license)
+
 
 ---
 
@@ -33,12 +33,12 @@ It uses a single poll loop and non-blocking I/O to efficiently handle all connec
 
 ## Features
 
-- **Real-time Messaging:** Instant private and public communication, faster than a flying kick.
-- **User Authentication:** Guard your server with PASS, NICK, and USER commands.
-- **Channel Management:** Create, join, and manage channels with smooth mastery.
-- **Operator Commands:** KICK, INVITE, TOPIC, and channel MODEs for total control.
-- **File Transfer:** A purely educational challenge you can show off, though in the real world DCC is recommended.
-- **Life-changing Bot:** Need jokes? Facts? Magic 8-ball wisdom? Dice rolls absolutely necessary for everyday existence? It’s all here. You’ll never look at IRC the same way again!
+- **Real-time messaging:** Instant private and public communication, faster than a flying kick.
+- **User authentication:** Guard your server with PASS, NICK, and USER commands.
+- **Channel management:** Create, join, and manage channels with smooth mastery.
+- **Operator commands:** KICK, INVITE, TOPIC, and channel MODEs for total control.
+- **File transfer:** A purely educational challenge you can show off, though in the real world DCC is recommended.
+- **Life-changing bot:** Need jokes? Facts? Magic 8-ball wisdom? Dice rolls absolutely necessary for everyday existence? It’s all here. You’ll never look at IRC the same way again!
 
 ---
 
@@ -69,7 +69,7 @@ An executable named `ircserv` will appear.
 
 ---
 
-## Usage & Testing
+## Usage & testing
 
 Start the server by specifying a port and password:
 
@@ -96,7 +96,7 @@ Feel free to use any other IRC client you prefer. Now walk the path of the unsto
 
 ## Commands
 
-### Client Commands
+### Client commands
 
 - **PASS `<password>`**  
   Authenticate with the server.
@@ -121,7 +121,7 @@ Feel free to use any other IRC client you prefer. Now walk the path of the unsto
 
 ---
 
-### Channel & Operator Commands
+### Channel & operator commands
 
 - **KICK `<#channel> <nickname>`**  
   Boot a user right out of the channel.  
@@ -141,7 +141,7 @@ Feel free to use any other IRC client you prefer. Now walk the path of the unsto
 
 ---
 
-### Bot Commands
+### Bot commands
 
 All bot commands start with `BOT`. Prepare for your life to be changed!
 
@@ -160,7 +160,7 @@ Roll dice (e.g., `BOT ROLL 2d20`). The first number (`N`) is the number of dice,
 
 ---
 
-### File Transfer Commands
+### File transfer commands
 
 Use a custom protocol to test out non-blocking file transfers:
 
@@ -185,10 +185,10 @@ Use a custom protocol to test out non-blocking file transfers:
 
 ---
 
-## Credits & License
+## Authors
 
 **ft_irc** is the proud effort of:
-- [Alisa Arbenina](https://github.com/aarbenin) — A software developer whose greatness is matched only by her infinite awesomeness. 🥋
+- [Alisa Arbenina](https://github.com/aarbenin) — A software developer whose greatness is matched only by her infinite awesomeness 😎✨
 - [Oleg Goman](https://github.com/OleGoman85) — A bald dude who codes fearlessly. 🐉
 
 
