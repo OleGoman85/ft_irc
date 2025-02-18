@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <algorithm>  // for std::transform
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -485,6 +484,11 @@ void Server::removeClient(int fd)
 {
     // Iterate through all channels and remove the client from them
     for (std::map<std::string, Channel>::iterator it = _channels.begin();
+         it != _channels.end(); ++it)
+    {
+        it->second.removeInvite(fd);
+    }
+    for (std::map<std::string, Channel>::iterator it = _channels.begin();
          it != _channels.end();)
     {
         it->second.removeClient(fd);  // Remove client from this channel
@@ -501,12 +505,10 @@ void Server::removeClient(int fd)
         }
     }
 
-    // Close the client's socket
     close(fd);
 
     // Remove the client from the server's client map
     getClients().erase(fd);
-
     // Remove the client's file descriptor from the poll descriptor vector
     for (size_t i = 0; i < _poll_fds.size(); ++i)
     {
@@ -533,6 +535,7 @@ void Server::removeClient(int fd)
  * @param sender_fd File descriptor of the sender (this client will be excluded
  * from receiving the message).
  */
+
 // void Server::broadcastMessage(const std::string& message, int sender_fd)
 // {
 //     for (const auto& pair : getClients())
@@ -570,12 +573,10 @@ void Server::broadcastMessage(const std::string& message, int sender_fd)
  */
 void Server::processCommand(int fd, const std::string& command)
 {
-    // std::cout << Utils::getTimestamp() << "Command from fd " << fd << ": " << command << std::endl;
-    std::cout << "\033[1;32m"
-          << Utils::getTimestamp()
-          << "Command from fd " << fd << ": " << command
-          << "\033[0m"
-          << std::endl;
+    // std::cout << Utils::getTimestamp() << "Command from fd " << fd << ": " <<
+    // command << std::endl;
+    std::cout << "\033[1;32m" << Utils::getTimestamp() << "Command from fd "
+              << fd << ": " << command << "\033[0m" << std::endl;
     std::vector<std::string> tokens = Utils::split(command, ' ');
     if (tokens.empty()) return;
 
@@ -584,7 +585,8 @@ void Server::processCommand(int fd, const std::string& command)
 
     if (cmd == "PASS")
     {
-         if (getClients()[fd]->authState != NOT_REGISTERED) {
+        if (getClients()[fd]->authState != NOT_REGISTERED)
+        {
             mayNotRegistered(fd);
             return;
         }
@@ -592,7 +594,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "NICK")
     {
-        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
+        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
+        {
             passRequired(fd);
             return;
         }
@@ -600,7 +603,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "USER")
     {
-        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
+        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
+        {
             passRequired(fd);
             return;
         }
@@ -608,7 +612,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "JOIN")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -616,7 +621,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "PRIVMSG")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -628,7 +634,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "PART")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -636,7 +643,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "KICK")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -644,7 +652,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "INVITE")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -652,7 +661,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "TOPIC")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -660,7 +670,8 @@ void Server::processCommand(int fd, const std::string& command)
     }
     else if (cmd == "MODE")
     {
-        if (getClients()[fd]->authState != AUTH_REGISTERED) {
+        if (getClients()[fd]->authState != AUTH_REGISTERED)
+        {
             notRegistered(fd);
             return;
         }
@@ -781,7 +792,9 @@ const std::string& Server::getServerName() const
  *
  * @param fd The file descriptor of the client.
  */
-void Server::mayNotRegistered(int fd) {
+
+void Server::mayNotRegistered(int fd)
+{
     if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
     {
         std::string reply = "462 :You may not reregister\r\n";
@@ -816,4 +829,3 @@ void Server::notRegistered(int fd)
 {
     safeSend(fd, "451 :You have not registered\r\n");
 }
-
