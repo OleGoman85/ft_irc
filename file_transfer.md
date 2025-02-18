@@ -1,97 +1,107 @@
-# Как работает команда передачи файлов?
-IRC-сервер поддерживает отправку файлов между клиентами с использованием текстовых команд.
-Передача файла выполняется в несколько этапов:
 
-1. **Инициирование передачи** — Отправитель сообщает получателю, что хочет передать файл, указывая его размер.
-2. **Передача данных** — Файл кодируется в base64 и отправляется частями.
-3. **Завершение передачи** — Отправитель сообщает серверу, что передача окончена.
-4. **Получатель принимает файл** — Сервер собирает все данные и сообщает об успешной передаче или ошибке (например, если файл передан не полностью).
+# **How the File Transfer Command Works**
 
-## Команды для передачи файлов
-###  **FILE SEND (отправка файла)**
-Команда отправляется от отправителя к серверу, чтобы сообщить о начале передачи.
+This IRC server supports sending files between clients using text-based commands. The file transfer process consists of several steps:
 
-**Формат:**
+1. **Initiate the transfer** — The sender informs the receiver that a file is about to be sent, specifying the file’s size.  
+2. **Transfer data** — The file is encoded in base64 and sent in chunks.  
+3. **End the transfer** — The sender notifies the server that the transfer is complete.  
+4. **Recipient receives the file** — The server assembles all the data and indicates successful transfer or an error (e.g., if the file was not fully sent).
+
+---
+
+## **File Transfer Commands**
+
+### **FILE SEND (Initiate File Transfer)** 
+The sender uses this command to notify the server about the start of file transfer.
+
+**Format:**
 ```irc
-FILE SEND <получатель> <имя_файла> <размер_в_байтах>
+FILE SEND <receiver> <filename> <size_in_bytes>
 ```
 
-**Пример:**
+**Example:**
 ```irc
 FILE SEND Bob myfile.txt 120
 ```
-- `Bob` — никнейм получателя
-- `myfile.txt` — название файла
-- `120` — размер файла в байтах (получить командой `ls -l myfile.txt` в Linux/Mac)
+- `Bob` — the receiver’s nickname  
+- `myfile.txt` — the file name  
+- `120` — file size in bytes (on Linux/Mac you can find this via `ls -l myfile.txt`)
 
-### 📌 **FILE DATA (передача данных)**
-После отправки `FILE SEND` передаются сами данные файла, закодированные в base64.
+---
 
-**Формат:**
+### **FILE DATA (Transmit File Data)**
+After sending `FILE SEND`, the actual file data (base64-encoded) is transmitted in chunks.
+
+**Format:**
 ```irc
-FILE DATA <имя_файла> <base64-кодированные_данные>
+FILE DATA <filename> <base64_encoded_data>
 ```
 
-**Пример:**
+**Example:**
 ```irc
 FILE DATA myfile.txt U29tZSBleGFtcGxlIHRleHQ=
 ```
-(Это base64-код от `Some example text`)
+(This base64 content decodes to `Some example text`)
 
-### **FILE END (завершение передачи)**
-Когда все данные отправлены, необходимо завершить передачу.
+---
 
-**Формат:**
+### **FILE END (Complete the Transfer)**
+Once all data has been sent, you must tell the server that the transfer is finished.
+
+**Format:**
 ```irc
-FILE END <имя_файла>
+FILE END <filename>
 ```
 
-**Пример:**
+**Example:**
 ```irc
 FILE END myfile.txt
 ```
 
-## Что такое base64 и зачем он нужен?
-Base64 — это способ кодирования бинарных файлов в текстовый формат. В IRC передача возможна только через текстовые команды, поэтому обычные файлы необходимо сначала закодировать.
+---
 
-###  **Как перевести файл в base64?**
-В Linux/Mac:
-```sh
+## **What Is Base64 and Why Is It Needed?**
+Base64 is a way to encode binary files into text format. In IRC, only text-based commands can be sent, so normal binary files must be encoded first.
+
+### **How to Encode a File in Base64?**  
+On Linux/Mac:
+```bash
 base64 myfile.txt
 ```
 
+### **How to Check the File Size?**  
+You need to know the file size in advance to use `FILE SEND`.
 
-### **Как узнать размер файла?**
-Перед отправкой файла нужно узнать его размер, чтобы указать в `FILE SEND`.
-
-В Linux/Mac:
-```sh
+On Linux/Mac:
+```bash
 ls -l myfile.txt
 ```
 
+---
 
-## 🔹 Как протестировать передачу файлов?
+## **Testing File Transfers**
 
-### ✅ **1. Запустить сервер**
-```sh
+### **1. Start the Server**
+```bash
 ./ircserv 6667 password
 ```
 
-### ✅ **2. Подключить два клиента**
-Запускаем два терминала и подключаем их к серверу с помощью `nc`:
+### **2. Connect Two Clients**
+Open two terminals and connect each to the server using `nc`:
 
-**Отправитель (Alice):**
-```sh
+**Sender (Alice):**
+```bash
 nc 127.0.0.1 6667
 ```
 
-**Получатель (Bob):**
-```sh
+**Receiver (Bob):**
+```bash
 nc 127.0.0.1 6667
 ```
 
-### ✅ **3. Авторизовать клиентов**
-Каждый вводит:
+### **3. Authenticate Each Client**
+Both clients enter:
 ```irc
 PASS password
 NICK Alice
@@ -104,54 +114,54 @@ NICK Bob
 USER Bob 0 * :Bob the Receiver
 ```
 
-### ✅ **4. Alice отправляет файл**
-1. Узнаём размер файла (например, `12` байт):
-   ```sh
+### **4. Alice Sends a File**
+1. Check the file size (example: `12` bytes):
+   ```bash
    ls -l testfile.txt
    ```
-
-2. Кодируем файл в base64:
-   ```sh
+2. Encode the file to base64:
+   ```bash
    base64 testfile.txt
    ```
-   Например, `Hello, World` превращается в `SGVsbG8sIFdvcmxkIQ==`
+   For instance, `Hello, World` becomes `SGVsbG8sIFdvcmxkIQ==`.
 
-3. Отправляем файл:
-```irc
-FILE SEND Bob testfile.txt 12
-FILE DATA testfile.txt SGVsbG8sIFdvcmxkIQ==
-FILE END testfile.txt
-```
+3. Send the file:
+   ```irc
+   FILE SEND Bob testfile.txt 12
+   FILE DATA testfile.txt SGVsbG8sIFdvcmxkIQ==
+   FILE END testfile.txt
+   ```
 
-### ✅ **5. Bob получает уведомление**
-Bob должен увидеть что-то вроде:
+### **5. Bob Gets a Notification**
+Bob should see something like:
 ```irc
 NOTICE Bob :Received file 'testfile.txt' (12 bytes)
 ```
 
-Если передано меньше байтов, сервер должен предупредить:
+If fewer bytes are sent than declared, the server should warn:
 ```irc
 NOTICE Alice :File transfer ended, but file is incomplete (9/12)
 ```
 
-### ✅ **6. Декодирование файла у Bob'а**
-```sh
+### **6. Decoding the File on Bob’s Side**
+```bash
 base64 -d received_base64.txt > recovered_file.txt
 ```
 
-## 🔹 Ожидаемое поведение сервера
+---
 
-### ✅ **Успешный сценарий**
-- Alice отправляет `FILE SEND`, `FILE DATA`, `FILE END`.
-- Bob получает файл и подтверждение.
-- Размер совпадает, сервер говорит `File transfer completed`.
+## **Expected Server Behavior**
 
-### ❌ **Ошибка: не весь файл передан**
-- Если Alice отправила только часть данных (`FILE DATA` не передал всё), сервер должен выдать:
-```irc
-NOTICE Alice :File transfer ended, but file is incomplete (X/Y bytes)
-```
+### **Successful Scenario**
+- Alice sends `FILE SEND`, followed by `FILE DATA` and `FILE END`.
+- Bob receives the file and a confirmation notice.
+- If the sizes match, the server says `File transfer completed`.
 
-### ❌ **Ошибка: некорректный base64**
-- Если данные не закодированы в base64, сервер должен отклонить `FILE DATA`.
+### **Error: Incomplete File**
+- If Alice sends only a portion of the data (`FILE DATA` does not send everything), the server should respond with:
+  ```irc
+  NOTICE Alice :File transfer ended, but file is incomplete (X/Y bytes)
+  ```
 
+### **Error: Invalid Base64**
+- If the data is not valid base64, the server should reject the `FILE DATA` command.
