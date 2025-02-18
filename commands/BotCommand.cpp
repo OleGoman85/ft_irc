@@ -1,9 +1,11 @@
 #include "BotCommand.hpp"
+
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <ctime>
 #include <sstream>
-#include <cctype>
+
 #include "../include/Channel.hpp"
 #include "../include/Client.hpp"
 #include "../include/Server.hpp"
@@ -19,9 +21,6 @@ static void sendToClient(int fd, const std::string& msg)
     send(fd, withCrLf.c_str(), withCrLf.size(), 0);
 }
 
-/**
- * @brief Returns a random 8-Ball style answer.
- */
 static std::string getRandom8BallAnswer()
 {
     static bool seeded = false;
@@ -32,19 +31,20 @@ static std::string getRandom8BallAnswer()
     }
 
     static const char* answers[] = {
-        "Yes!", "No!", "Maybe...", "Certainly yes",
-        "Ask again later", "Definitely no!",
-        "Chances are low", "Check your code, not me"
-    };
+        "Yes!",
+        "Think again!",
+        "Maybe...",
+        "Certainly yes",
+        "Ask again later",
+        "Don't ask if you don't want to know the answer",
+        "Chances are low",
+        "Check your code, not me"};
 
-    int size = static_cast<int>(sizeof(answers) / sizeof(answers[0]));
+    int size        = static_cast<int>(sizeof(answers) / sizeof(answers[0]));
     int randomIndex = std::rand() % size;
     return answers[randomIndex];
 }
 
-/**
- * @brief Returns a random joke from a predefined list.
- */
 static std::string getRandomJoke()
 {
     static bool seeded = false;
@@ -58,17 +58,14 @@ static std::string getRandomJoke()
         "Why do programmers prefer dark mode? Because light attracts bugs!",
         "I would tell you a UDP joke, but you might not get it...",
         "Your code is so fine, I'd run a debugger on it any time!",
-        "What did the programmer say before they left the house? 'I'll be back in O(1)'"
-    };
+        "What did the programmer say before they left the house? 'I'll be back "
+        "in O(1)'"};
 
-    int size = static_cast<int>(sizeof(jokes) / sizeof(jokes[0]));
+    int size        = static_cast<int>(sizeof(jokes) / sizeof(jokes[0]));
     int randomIndex = std::rand() % size;
     return jokes[randomIndex];
 }
 
-/**
- * @brief Returns a random fact from a predefined list.
- */
 static std::string getRandomFact()
 {
     static bool seeded = false;
@@ -82,22 +79,18 @@ static std::string getRandomFact()
         "C++ was developed by Bjarne Stroustrup starting in 1979.",
         "IRC (Internet Relay Chat) was created by Jarkko Oikarinen in 1988.",
         "The first computer programmer was Ada Lovelace in the 19th century.",
-        "The name '42' is from 'The Hitchhiker's Guide to the Galaxy'."
-    };
+        "The name '42' is from 'The Hitchhiker's Guide to the Galaxy'."};
 
-    int size = static_cast<int>(sizeof(facts) / sizeof(facts[0]));
+    int size        = static_cast<int>(sizeof(facts) / sizeof(facts[0]));
     int randomIndex = std::rand() % size;
     return facts[randomIndex];
 }
 
-/**
- * @brief Returns the current local server time as a string.
- */
 static std::string getServerTime()
 {
-    std::time_t now = std::time(nullptr);
-    std::tm* localTime = std::localtime(&now);
-    char buffer[80];
+    std::time_t now       = std::time(nullptr);
+    std::tm*    localTime = std::localtime(&now);
+    char        buffer[80];
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
     return std::string(buffer);
 }
@@ -107,14 +100,14 @@ static std::string getServerTime()
  */
 static std::string getHelpMessage()
 {
-    return 
-        "Available BOT commands:\n"
-        "  BOT ROLL [NdM]               - Roll N dice with M sides (default 1d6)\n"
-        "  BOT 8BALL <question>         - Magic 8-Ball answers\n"
-        "  BOT JOKE                     - Receive a random joke\n"
-        "  BOT FACT                     - Receive a random fact\n"
-        "  BOT TIME                     - Get server local time\n"
-        "  BOT HELP                     - Show this help\n";
+    return "Available BOT commands:\n"
+           "  BOT ROLL [NdM]               - Roll N dice with M sides (default "
+           "1d6)\n"
+           "  BOT 8BALL <question>         - Magic 8-Ball answers\n"
+           "  BOT JOKE                     - Receive a random joke\n"
+           "  BOT FACT                     - Receive a random fact\n"
+           "  BOT TIME                     - Get server local time\n"
+           "  BOT HELP                     - Show this help\n";
 }
 
 /**
@@ -129,7 +122,7 @@ static bool parseDice(const std::string& s, int& N, int& M)
     size_t pos = s.find('d');
     if (pos == std::string::npos) return false;
 
-    std::string left = s.substr(0, pos);
+    std::string left  = s.substr(0, pos);
     std::string right = s.substr(pos + 1);
 
     for (size_t i = 0; i < left.size(); ++i)
@@ -199,7 +192,8 @@ void handleBotCommand(Server* server, int fd,
     }
 
     std::string subCommand = tokens[1];
-    std::transform(subCommand.begin(), subCommand.end(), subCommand.begin(), ::toupper);
+    std::transform(subCommand.begin(), subCommand.end(), subCommand.begin(),
+                   ::toupper);
 
     if (subCommand == "HELP")
     {
@@ -222,7 +216,8 @@ void handleBotCommand(Server* server, int fd,
     {
         if (tokens.size() < 3)
         {
-            sendToClient(fd, "461 BOT 8BALL :Not enough parameters (ask a question!)");
+            sendToClient(
+                fd, "461 BOT 8BALL :Not enough parameters (ask a question!)");
             return;
         }
         std::string question;

@@ -158,24 +158,27 @@ irssi -c localhost -p 6667 -w 123
 
 
 
-pass 123
-nick Alisa
-user Alisa 0 * :Alisa the Great
-join #cde
+PASS 123
+NICK Alisa
+USER Alisa 0 * :Alisa the Great
+
+JOIN #cde
 
 
 
-pass 123
-nick Masha
-user Masha 0 * :Masha the Cat
-join #cde
+PASS 123
+NICK Masha
+USER Masha 0 * :Masha the Cat
+
+JOIN #cde
 
 
 
-pass 123
-nick Oleg
-user Oleg 0 * :Oleg the Bold Guy
-join #cde
+PASS 123
+NICK Oleg
+USER Oleg 0 * :Oleg the Bold Guy
+
+JOIN #cde
 
 
 
