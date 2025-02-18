@@ -19,6 +19,7 @@ static void broadcastNickChange(Server* server, Client* client,
                                 const std::string& oldNick, 
                                 const std::string& newNick)
 {
+    // Construct the NICK change message in the IRC protocol format.
     std::string message =
         ":" + oldNick + "!" + client->getUsername() + "@" + client->getHost() +
         " NICK :" + newNick + "\r\n";
@@ -28,14 +29,19 @@ static void broadcastNickChange(Server* server, Client* client,
     // Use a set to avoid duplicate sends (e.g., if a user is in multiple channels).
     std::set<int> notifiedClients;
 
+    // Iterate through all channels on the server.
     for (std::map<std::string, Channel>::iterator it = server->getChannels().begin();
          it != server->getChannels().end(); ++it)
     {
         Channel& chan = it->second;
+
+        // Check if the client changing the nickname is in this channel.
         if (chan.hasClient(fd))
         {
+            // Notify all clients in the channel about the nickname change.
             for (int otherFd : chan.getClients())
             {
+                // Ensure each client receives the message only once.
                 if (otherFd != fd && notifiedClients.insert(otherFd).second)
                 {
                     send(otherFd, message.c_str(), message.size(), 0);
@@ -63,6 +69,7 @@ void handleNickCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
                        const std::string& /*command*/)
 {
+    // Check if a nickname argument was provided.
     if (tokens.size() < 2)
     {
         std::string reply = "431 :No nickname given\r\n";
@@ -72,6 +79,7 @@ void handleNickCommand(Server* server, int fd,
 
     std::string newNick = tokens[1];
 
+    // Ensure the nickname is unique by checking all connected clients.
     for (const auto& pair : server->getClients())
     {
         if (pair.first != fd && pair.second->getNickname() == newNick)
@@ -82,21 +90,30 @@ void handleNickCommand(Server* server, int fd,
         }
     }
 
+    // Retrieve the client object associated with the given file descriptor.
     Client* client = server->getClients()[fd].get();
     if (!client) return;
 
     std::string oldNick = client->getNickname();
 
+    // Set the new nickname.
     client->setNickname(newNick);
 
+    // Reference to the client's authentication state.
     AuthState& st = client->authState;
 
+    ///----------------------------------------
+    // Handle different authentication states:
+    ///----------------------------------------
+
+    // If the user is not yet registered, update state and return.
     if (st == NOT_REGISTERED)
     {
         st = WAITING_FOR_USER;
         return;
     }
 
+    // If the user was waiting for a nickname, update state accordingly.
     if (st == WAITING_FOR_NICK)
     {
         st = WAITING_FOR_USER;
@@ -108,6 +125,7 @@ void handleNickCommand(Server* server, int fd,
         return;
     }
 
+    // If the user was waiting for a username, finalize registration if possible.
     if (st == WAITING_FOR_USER)
     {
         if (!client->getUsername().empty())
@@ -118,6 +136,7 @@ void handleNickCommand(Server* server, int fd,
         return;
     }
 
+    // If the user is already registered and changed their nickname, notify others.
     if (st == AUTH_REGISTERED && !oldNick.empty() && oldNick != newNick)
     {
         broadcastNickChange(server, client, oldNick, newNick);

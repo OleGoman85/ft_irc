@@ -30,12 +30,12 @@ $(NAME): $(OBJS)
 # Compile .cpp files into object files from SRC_DIR
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	@$(CXX) $(CXXFLAGS) -I $(INC_DIR) -c $< -o $@
-	@/bin/echo -n "..."
+	@/bin/echo -n ".."
 
 # Compile .cpp files into object files from CMD_DIR
 $(OBJ_DIR)/%.o: $(CMD_DIR)/%.cpp | $(OBJ_DIR)
 	@$(CXX) $(CXXFLAGS) -I $(INC_DIR) -c $< -o $@
-	@/bin/echo -n "..."
+	@/bin/echo -n ".."
 
 # Include automatically generated dependency files
 -include $(DEPS)

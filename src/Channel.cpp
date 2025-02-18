@@ -1,31 +1,18 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Channel.cpp                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: alisa <alisa@student.42.fr>                +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/08 12:48:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/08 11:27:25 by alisa            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../include/Channel.hpp"
 
 #include <cstdlib>  // for std::stoi
 #include <stdexcept>
 
 /**
- * @brief Channel constructor.
+ * @brief Default constructor for Channel.
  *
- * Initializes a new Channel object with the given channel name.
- * Sets default values for the channel topic, invite-only and topic-restricted
- * modes, channel key and user limit. Also initializes the mode flags in the
- * _modes map.
- *
- * @param name The name of the channel.
+ * This constructor initializes a channel with default values. 
+ * The channel name is empty, and all settings are set to their 
+ * default states (no topic, not invite-only, no restrictions, 
+ * no key, and no user limit). The mode flags are also initialized 
+ * in the `_modes` map.
  */
- Channel::Channel()
+Channel::Channel()
     : _name(""),
       _topic(""),
       _inviteOnly(false),
@@ -33,13 +20,25 @@
       _channelKey(""),
       _userLimit(0)
 {
-    _modes['i'] = _inviteOnly;
-    _modes['t'] = _topicRestricted;
-    _modes['k'] = false;
-    _modes['o'] = false;
-    _modes['l'] = false;
+    // Initialize mode flags in the _modes map
+    _modes['i'] = _inviteOnly;     // Invite-only mode
+    _modes['t'] = _topicRestricted; // Topic-restricted mode
+    _modes['k'] = false;           // Channel key (password) mode
+    _modes['o'] = false;           // Operator mode
+    _modes['l'] = false;           // User limit mode
 }
 
+
+/**
+ * @brief Parameterized constructor for Channel.
+ *
+ * This constructor initializes a channel with a given name. 
+ * Other properties are set to their default values (empty topic, 
+ * no restrictions, no key, no user limit). The mode flags are 
+ * also initialized in the `_modes` map.
+ *
+ * @param name The name of the channel.
+ */
 Channel::Channel(const std::string& name)
     : _name(name),
       _topic(""),
@@ -48,17 +47,19 @@ Channel::Channel(const std::string& name)
       _channelKey(""),
       _userLimit(0)
 {
-    // Initialize basic modes (the _modes flags are used for notifications).
-    _modes['i'] = _inviteOnly;
-    _modes['t'] = _topicRestricted;
-    _modes['k'] = false;
-    _modes['o'] = false;
-    _modes['l'] = false;
+    // Initialize mode flags in the _modes map
+    _modes['i'] = _inviteOnly;     // Invite-only mode
+    _modes['t'] = _topicRestricted; // Topic-restricted mode
+    _modes['k'] = false;           // Channel key (password) mode
+    _modes['o'] = false;           // Operator mode
+    _modes['l'] = false;           // User limit mode
 }
+
 
 Channel::~Channel()
 {
 }
+
 
 /**
  * @brief Retrieves the channel name.
@@ -69,6 +70,7 @@ std::string Channel::getName() const
 {
     return _name;
 }
+
 
 /**
  * @brief Adds a client to the channel.
@@ -82,6 +84,7 @@ void Channel::addClient(int fd)
 {
     if (!hasClient(fd)) _clients.push_back(fd);
 }
+
 
 /**
  * @brief Removes a client from the channel.
@@ -104,6 +107,7 @@ void Channel::removeClient(int fd)
     removeOperator(fd);
 }
 
+
 /**
  * @brief Checks if a client is present in the channel.
  *
@@ -122,6 +126,7 @@ bool Channel::hasClient(int fd) const
     return false;
 }
 
+
 /**
  * @brief Sets the channel topic.
  *
@@ -134,6 +139,7 @@ void Channel::setTopic(const std::string& topic)
     _topic = topic;
 }
 
+
 /**
  * @brief Retrieves the channel topic.
  *
@@ -143,6 +149,7 @@ std::string Channel::getTopic() const
 {
     return _topic;
 }
+
 
 /**
  * @brief Sets a mode for the channel.
@@ -195,6 +202,7 @@ void Channel::setMode(char mode, bool enable, const std::string& param)
     }
 }
 
+
 /**
  * @brief Checks if a specific mode is set for the channel.
  *
@@ -210,6 +218,7 @@ bool Channel::hasMode(char mode) const
     return false;
 }
 
+
 /**
  * @brief Retrieves the list of client file descriptors in the channel.
  *
@@ -220,6 +229,7 @@ const std::vector<int>& Channel::getClients() const
 {
     return _clients;
 }
+
 
 /**
  * @brief Adds an operator to the channel.
@@ -234,6 +244,7 @@ void Channel::addOperator(int fd)
     // If the user is already an operator, do nothing.
     if (!isOperator(fd)) _operators.push_back(fd);
 }
+
 
 /**
  * @brief Removes an operator from the channel.
@@ -256,6 +267,7 @@ void Channel::removeOperator(int fd)
     }
 }
 
+
 /**
  * @brief Checks if a client is an operator in the channel.
  *
@@ -274,16 +286,42 @@ bool Channel::isOperator(int fd) const
     return false;
 }
 
+
+/**
+ * @brief Invites a client to the channel.
+ *
+ * Adds the client's file descriptor to the `_invitedClients` set, allowing them to join
+ * the channel even if it is invite-only.
+ *
+ * @param fd The file descriptor of the client to be invited.
+ */
 void Channel::inviteClient(int fd)
 {
     _invitedClients.insert(fd);
 }
 
+
+/**
+ * @brief Checks if a client has been invited to the channel.
+ *
+ * Determines whether the given file descriptor exists in the `_invitedClients` set.
+ *
+ * @param fd The file descriptor of the client.
+ * @return `true` if the client has been invited; `false` otherwise.
+ */
 bool Channel::isInvited(int fd) const
 {
     return _invitedClients.find(fd) != _invitedClients.end();
 }
 
+
+/**
+ * @brief Removes an invite for a client.
+ *
+ * If a client was invited but has not yet joined, this function revokes their invitation.
+ *
+ * @param fd The file descriptor of the client whose invite should be removed.
+ */
 void Channel::removeInvite(int fd)
 {
     _invitedClients.erase(fd);

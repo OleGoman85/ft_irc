@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Pass.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: aarbenin <aarbenin@student.hive.fi>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/14 10:43:39 by ogoman            #+#    #+#             */
-/*   Updated: 2025/02/11 14:50:18 by aarbenin         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Pass.hpp"
 
 #include <string>
@@ -40,7 +28,6 @@ void handlePassCommand(Server* server, int fd,
 {
     if (tokens.size() < 2)
     {
-        // Ошибка
         std::string reply = "461 PASS :Not enough parameters\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;

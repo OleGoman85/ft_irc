@@ -21,6 +21,7 @@ struct ModeChange
     std::string param;  ///< parameter if needed
 };
 
+
 /**
  * @brief Sends a reply message to a client.
  *
@@ -31,6 +32,7 @@ static void sendReply(int fd, const std::string& message)
 {
     send(fd, message.c_str(), message.size(), 0);
 }
+
 
 /**
  * @brief Checks if the client is registered.
@@ -52,6 +54,7 @@ static bool checkRegistration(Server* server, int fd)
     return true;
 }
 
+
 /**
  * @brief Retrieves a pointer to the channel by name.
  *
@@ -67,6 +70,7 @@ static Channel* getChannel(Server* server, int fd,
 {
     std::map<std::string, Channel>&          channels = server->getChannels();
     std::map<std::string, Channel>::iterator it = channels.find(channelName);
+    // If the channel does not exist, send an error reply and return NULL.
     if (it == channels.end())
     {
         sendReply(fd, "403 " + channelName + " :No such channel\r\n");
@@ -74,6 +78,7 @@ static Channel* getChannel(Server* server, int fd,
     }
     return &(it->second);
 }
+
 
 /**
  * @brief Prints the current modes of the channel to the requesting client.
@@ -87,11 +92,14 @@ static void printCurrentModes(Server* server, int fd, Channel& channel,
                               const std::string& channelName)
 {
     std::string modes;
+
+    // Check for specific channel modes and build the mode string.
     if (channel.isInviteOnly()) modes += "i";
     if (channel.isTopicRestricted()) modes += "t";
     if (channel.hasMode('k')) modes += "k";
     if (channel.hasMode('l')) modes += "l";
 
+        // If no modes are set, return a default "+", otherwise prepend "+" to the mode string.
     if (modes.empty())
         modes = "+";
     else
@@ -100,12 +108,15 @@ static void printCurrentModes(Server* server, int fd, Channel& channel,
     std::ostringstream reply;
     reply << "324 " << server->getClients()[fd]->getNickname() << " "
           << channelName << " " << modes;
+    
+    // Include mode parameters if required (key for +k, user limit for +l).
     if (channel.hasMode('k')) reply << " " << channel.getChannelKey();
     if (channel.hasMode('l'))
         reply << " " << std::to_string(channel.getUserLimit());
     reply << "\r\n";
     sendReply(fd, reply.str());
 }
+
 
 /**
  * @brief Parses the mode string and applies the changes to the channel.
@@ -136,7 +147,8 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
         return false;
     }
 
-    bool currentSign = (modeStr[0] == '+');
+    bool currentSign = (modeStr[0] == '+'); // Determines whether to add or remove modes.
+
     // Process each character in the mode string.
     for (size_t i = 0; i < modeStr.size(); ++i)
     {
@@ -161,7 +173,7 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
             case 'i':
             case 't':
             {
-                // Modes 'i' and 't' do not require parameters.
+                // Modes 'i' (invite-only) and 't' (topic lock) require no parameters.
                 channel.setMode(c, currentSign);
                 changes.push_back(change);
                 break;
@@ -191,8 +203,7 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
             }
             case 'l':
             {
-                // Mode 'l' (user limit) requires a numeric parameter when
-                // adding.
+                // Mode 'l' (user limit) requires a numeric parameter when adding.
                 if (currentSign)
                 {
                     if (paramIdx >= tokens.size())
@@ -315,56 +326,82 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
     return true;
 }
 
+
 /**
  * @brief Broadcasts the mode change to all clients in the channel.
  *
- * Constructs a grouped mode string and sends the broadcast message.
+ * This function constructs a formatted mode change message and sends it to
+ * all clients present in the channel. The message follows the IRC protocol
+ * format and includes the nickname, username, and host of the user who issued
+ * the mode change.
  *
- * @param server Pointer to the server.
- * @param sourceFd The file descriptor of the client who issued the command.
- * @param channel Reference to the channel.
- * @param changes Vector of mode changes applied.
+ * @param server Pointer to the server instance.
+ * @param sourceFd The file descriptor of the client who issued the MODE command.
+ * @param channel Reference to the channel where the mode change is applied.
+ * @param changes A vector of ModeChange structures representing applied changes.
  */
+
 static void broadcastModeChange(Server* server, int sourceFd, Channel& channel,
                                 const std::vector<ModeChange>& changes)
 {
+    // If there are no mode changes, there is nothing to broadcast.
     if (changes.empty()) return;
 
-    std::ostringstream       modeStream;
-    std::vector<std::string> modeParams;
+    std::ostringstream       modeStream;  // Stream to construct the mode string
+    std::vector<std::string> modeParams;  // Vector to store mode parameters
 
+    // Initialize the mode string with the first change ('+' or '-').
     modeStream << (changes[0].add ? "+" : "-");
     char currentGroupSign = (changes[0].add ? '+' : '-');
 
+    // Iterate through the list of mode changes.
     for (size_t i = 0; i < changes.size(); ++i)
     {
+        // If the sign of the mode change (+ or -) differs from the previous,
+        // add a space and append the new sign.
         if ((changes[i].add ? '+' : '-') != currentGroupSign)
         {
             modeStream << " " << (changes[i].add ? "+" : "-");
             currentGroupSign = (changes[i].add ? '+' : '-');
         }
+
+        // Append the mode character to the mode string.
         modeStream << changes[i].mode;
+
+        // If the mode requires a parameter (e.g., +k key, +l limit), add it to the parameters list.
         if (!changes[i].param.empty()) modeParams.push_back(changes[i].param);
     }
+
+    // Retrieve the client who issued the mode command.
     Client*     sourceClient = server->getClients()[sourceFd].get();
     std::string nick         = sourceClient->getNickname();
     std::string user         = sourceClient->getUsername();
+    std::string host         = sourceClient->getHost();
+
+    // If the username or host is empty, use default values.
     if (user.empty()) user = "unknown";
-    std::string host = sourceClient->getHost();
     if (host.empty()) host = "localhost";
 
+    // Construct the IRC-style prefix for the message.
     std::string prefix = ":" + nick + "!" + user + "@" + host;
 
+    // Build the full mode change message.
     std::ostringstream broadcast;
     broadcast << prefix << " MODE " << channel.getName() << " "
               << modeStream.str();
+
+    // Append mode parameters if they exist.   
     for (size_t i = 0; i < modeParams.size(); ++i)
         broadcast << " " << modeParams[i];
-    broadcast << "\r\n";
-    std::string      msg     = broadcast.str();
+
+    broadcast << "\r\n"; // End of message
+    std::string msg = broadcast.str(); // Convert stream to string
+
+    // Retrieve the list of all clients in the channel and send the message to each.
     std::vector<int> clients = channel.getClients();
     for (size_t i = 0; i < clients.size(); ++i) sendReply(clients[i], msg);
 }
+
 
 /**
  * @brief Handles the MODE command.
@@ -384,6 +421,7 @@ void handleModeCommand(Server* server, int fd,
 {
     (void)rawCommand;
 
+    // Ensure the client is registered before handling the command.
     if (!checkRegistration(server, fd)) return;
 
     if (tokens.size() < 2)
@@ -394,6 +432,7 @@ void handleModeCommand(Server* server, int fd,
 
     std::string channelName = tokens[1];
 
+    // Ensure the MODE command is applied to a channel and not a user.
     if (!channelName.empty() && channelName[0] != '#')
     {
         std::string myNick = server->getClients()[fd]->getNickname();
@@ -409,15 +448,18 @@ void handleModeCommand(Server* server, int fd,
         return;
     }
 
+    // Retrieve the channel object.
     Channel*    channel     = getChannel(server, fd, channelName);
     if (!channel) return;
 
+    // If no mode change is specified, print current modes.
     if (tokens.size() == 2)
     {
         printCurrentModes(server, fd, *channel, channelName);
         return;
     }
 
+    // Only channel operators can modify modes.
     if (!channel->isOperator(fd))
     {
         sendReply(fd,
@@ -429,9 +471,11 @@ void handleModeCommand(Server* server, int fd,
     size_t                  paramIdx = 3;
     std::vector<ModeChange> changes;
 
+    // Parse and apply mode changes.
     if (!parseAndApplyModeChanges(server, fd, *channel, modeStr, tokens,
                                   paramIdx, changes))
         return;
 
+    // Broadcast mode changes to the channel.
     broadcastModeChange(server, fd, *channel, changes);
 }

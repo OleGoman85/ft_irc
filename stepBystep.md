@@ -61,7 +61,7 @@
    INVITE User2 #testchannel
    ```
 
-❌ **TOPIC** – установка или просмотр темы канала (не реализовано)  
+✅ **TOPIC** – установка или просмотр темы канала 
    ```
    TOPIC #testchannel :New Channel Topic  // установить тему
    TOPIC #testchannel                     // запросить текущую тему

@@ -1,53 +1,61 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ogoman <ogoman@student.hive.fi>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/08 12:40:05 by ogoman            #+#    #+#             */
-/*   Updated: 2025/01/29 07:38:23 by ogoman           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../include/Server.hpp"
 #include <iostream>
 #include <cstdlib>
 
 
+/**
+ * @brief Entry point for the IRC server.
+ *
+ * This function initializes the server with the specified port and password,
+ * then starts the server loop.
+ *
+ * Usage:
+ *   ./ircserv <port> <password>
+ *
+ * The port must be a valid number in the range 1024-65535.
+ * If "port" is specified instead of a number, the default port 6667 is used.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv The command-line arguments.
+ * @return EXIT_SUCCESS if the server runs successfully, EXIT_FAILURE otherwise.
+ */
 int main(int argc, char* argv[])
 {
+    // Ensure correct usage.
     if (argc != 3) {
         std::cerr << "Usage: ./ircserv <port> <password>\n";
         return EXIT_FAILURE;
     }
 
     int port;
-    if(std::string(argv[1]) == "port")
-    {
+    
+    // Allow "port" as an argument to default to 6667.
+    if (std::string(argv[1]) == "port") {
         port = 6667;
-    }
-    else
-    {
+    } 
+    else {
         try {
-            port = std::stoi(argv[1]);
-            // Check if the port is within the valid range
+            port = std::stoi(argv[1]);  // Convert the string to an integer.
+            
+            // Validate the port number.
             if (port < 1024 || port > 65535) {
                 std::cerr << "Error: Port must be in the range 1024-65535.\n";
                 return EXIT_FAILURE;
             }
-        } catch (const std::exception& e) {
+        } 
+        catch (const std::exception&) {
             std::cerr << "Invalid port number.\n";
             return EXIT_FAILURE;
         }
     }
 
-    std::string password = argv[2];
-    
+    std::string password = argv[2];  // Store the provided password.
+
     try {
-        Server server(port, password);
-        server.run();                    //! start server
-    } catch (const std::exception& e) {
+        Server server(port, password);  // Initialize the server.
+        server.run();                   // Start the server loop.
+    } 
+    catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return EXIT_FAILURE;
     }
@@ -55,35 +63,3 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-
-/*
-    term1  ./ircserv 6667 mypassword
-            ./ircserv port mypassword
-                Сервер запущен на порту 6667
-                
-
-    term2  nc 127.0.0.1 6667
-            nc localhost 6667
-                Hello Server
-
-    nc = (Netcat)
-*/
-
-/*
-Стандарт IRC
-Порт 6667 был определён как стандартный порт для IRC-серверов. Большинство IRC-клиентов по умолчанию пытаются подключиться к серверам именно через этот порт.
-
-Однако можно использовать любой порт, который:
-Не конфликтует с другими службами.
-Находится в диапазоне 1024-65535 (порты ниже 1024 требуют привилегий суперпользователя).
-
-*/
-
-
-/*
-127.0.0.1 — это localhost
-Это зарезервированный IP-адрес, который используется для подключения к серверу на том же устройстве, где он запущен. Он идеален для тестирования, поскольку:
-
-Трафик не выходит за пределы устройства.
-Быстрая настройка.
-*/

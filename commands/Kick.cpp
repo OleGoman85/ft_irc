@@ -80,17 +80,14 @@ static int countOperators(const Channel& chan)
 /**
  * @brief Handles the KICK command from a client.
  *
- * removes a target user from the specified channel.
- * The overall logic is:
- *   Check registration and parameters.
- *   Verify that the channel exists, and that the kicker is on it + is an
- * operator.
- *   Find the target user by nickname; check if they're on the channel.
- *   If the target user is the last operator in a channel that still has
- * other participants, deny the KICK (analogous to the PART logic).
- *   Otherwise, broadcast a KICK message and remove the target from the
- * channel.
- *   If the channel becomes empty, delete it.
+ * Removes a target user from the specified channel. The overall logic:
+ *  1. Verify that the sender is fully registered.
+ *  2. Check that at least "KICK <channelName> <targetNick>" was provided (3 tokens).
+ *  3. Confirm the channel exists, and that the kicker is both on the channel and an operator.
+ *  4. Verify that the target user exists and is also on the channel.
+ *  5. Prevent kicking the last operator if the channel still has members.
+ *  6. Otherwise, remove the target from the channel (and delete the channel if empty),
+ *     then broadcast the KICK message to remaining members, the target, and the kicker.
  *
  * Numeric replies used:
  *   - 451 :You have not registered
@@ -106,21 +103,27 @@ void handleKickCommand(Server* server, int fd,
                        const std::vector<std::string>& tokens,
                        const std::string& /*command*/)
 {
+    // 1. The client must be fully registered (AUTH_REGISTERED).
     if (server->getClients()[fd]->authState != AUTH_REGISTERED)
     {
         std::string reply = "451 :You have not registered\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
+
+    // 2. Check that the command has at least: KICK <channelName> <targetNick>.
     if (tokens.size() < 3)
     {
         std::string reply = "461 KICK :Not enough parameters\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
+
+    // Extract channel name and target nickname.
     std::string channelName = tokens[1];
     std::string targetNick  = tokens[2];
 
+    // 3. Confirm the channel exists in the server's channel map.
     std::map<std::string, Channel>& chanMap = server->getChannels();
     if (chanMap.find(channelName) == chanMap.end())
     {
@@ -130,22 +133,23 @@ void handleKickCommand(Server* server, int fd,
     }
     Channel& channelObj = chanMap[channelName];
 
+    // Make sure the kicker is on that channel.
     if (!isUserInChannel(server, fd, channelName))
     {
-        std::string reply =
-            "442 " + channelName + " :You're not on that channel\r\n";
+        std::string reply = "442 " + channelName + " :You're not on that channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
 
+    // Make sure the kicker is an operator on that channel.
     if (!isUserOperatorInChannel(server, fd, channelName))
     {
-        std::string reply =
-            "482 " + channelName + " :You're not channel operator\r\n";
+        std::string reply = "482 " + channelName + " :You're not channel operator\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
 
+    // 4. Find the target user by nickname, ensure they exist.
     int targetFd = findUserFdByNick(server, targetNick);
     if (targetFd == -1)
     {
@@ -154,14 +158,15 @@ void handleKickCommand(Server* server, int fd,
         return;
     }
 
+    // Check if that user is in the channel to be kicked.
     if (!isUserInChannel(server, targetFd, channelName))
     {
-        std::string reply = "441 " + targetNick + " " + channelName +
-                            " :They aren't on that channel\r\n";
+        std::string reply = "441 " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
         return;
     }
 
+    // 5. Prevent removing the last operator (if channel has more members).
     if (channelObj.isOperator(targetFd))
     {
         size_t totalUsers = channelObj.getClients().size();
@@ -170,14 +175,15 @@ void handleKickCommand(Server* server, int fd,
             int opCount = countOperators(channelObj);
             if (opCount == 1)
             {
-                std::string reply =
-                    "482 " + channelName + " :Cannot remove last operator\r\n";
+                std::string reply = "482 " + channelName + " :Cannot remove last operator\r\n";
                 send(fd, reply.c_str(), reply.size(), 0);
                 return;
             }
         }
     }
 
+    // 6. Gather an optional KICK comment (if present),
+    //    else use the kicker's nickname.
     std::string comment;
     if (tokens.size() > 3)
     {
@@ -194,15 +200,17 @@ void handleKickCommand(Server* server, int fd,
         comment = server->getClients()[fd]->getNickname();
     }
 
+    // Remove the target user from the channel.
     channelObj.removeClient(targetFd);
 
+    // If the channel is now empty, erase it from the server.
     if (channelObj.getClients().empty())
     {
         chanMap.erase(channelName);
     }
 
-    // Classic format: :<kickerNick>!<user>@<host> KICK <channel> <targetNick>
-    // :<comment>
+    // Build the KICK message in IRC format:
+    // :<kickerNick>!<kickerUser>@<host> KICK <channelName> <targetNick> :<comment>
     Client*     c    = server->getClients()[fd].get();
     std::string nick = c->getNickname();
     std::string user = c->getUsername();
@@ -217,12 +225,14 @@ void handleKickCommand(Server* server, int fd,
     }
 
     std::string kickMsg = ":" + nick + "!" + user + "@" + host + " KICK " +
-                          channelName + " " + targetNick + " :" + comment +
-                          "\r\n";
+                          channelName + " " + targetNick + " :" + comment + "\r\n";
 
+    // Broadcast this KICK message to all remaining members of the channel,
+    // and also send it to the target user and back to the kicker.
     for (int memFd : channelObj.getClients())
     {
-        if (memFd != fd) send(memFd, kickMsg.c_str(), kickMsg.size(), 0);
+        if (memFd != fd)
+            send(memFd, kickMsg.c_str(), kickMsg.size(), 0);
     }
     send(targetFd, kickMsg.c_str(), kickMsg.size(), 0);
     send(fd, kickMsg.c_str(), kickMsg.size(), 0);
