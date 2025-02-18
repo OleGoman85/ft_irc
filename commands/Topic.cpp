@@ -1,9 +1,6 @@
 #include "Topic.hpp"
-
 #include <sys/socket.h>
-
 #include <string>
-
 #include "../include/Server.hpp"
 
 /**

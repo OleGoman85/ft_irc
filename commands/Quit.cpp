@@ -1,9 +1,7 @@
 #include "Quit.hpp"
-
 #include <sstream>
 #include <string>
 #include <vector>
-
 #include "../include/Channel.hpp"
 #include "../include/Client.hpp"
 #include "../include/Server.hpp"

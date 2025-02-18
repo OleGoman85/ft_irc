@@ -1,6 +1,5 @@
 #ifndef QUIT_HPP
 #define QUIT_HPP
-
 #include <string>
 #include <vector>
 

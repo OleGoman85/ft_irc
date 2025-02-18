@@ -1,14 +1,11 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
-
 #include <poll.h>
 #include <sys/socket.h>
-
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "FileTransfer.hpp"

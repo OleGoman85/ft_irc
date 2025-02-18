@@ -1,6 +1,5 @@
 #include "../include/Channel.hpp"
-
-#include <cstdlib>  // for std::stoi
+#include <cstdlib> 
 #include <stdexcept>
 
 /**

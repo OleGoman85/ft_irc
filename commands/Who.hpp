@@ -1,6 +1,5 @@
 #ifndef WHO_HPP
 #define WHO_HPP
-
 #include <string>
 #include <vector>
 

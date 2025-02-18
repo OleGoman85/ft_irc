@@ -1,6 +1,5 @@
 #ifndef MODE_HPP
 #define MODE_HPP
-
 #include <string>
 #include <vector>
 

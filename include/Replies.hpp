@@ -1,6 +1,5 @@
 #ifndef REPLIES_HPP
 #define REPLIES_HPP
-
 #include <string>
 
 class Server;

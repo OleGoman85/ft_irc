@@ -1,6 +1,5 @@
 #ifndef NICK_HPP
 #define NICK_HPP
-
 #include <string>
 #include <vector>
 

@@ -1,6 +1,5 @@
 #ifndef FILETRANSFER_HPP
 #define FILETRANSFER_HPP
-
 #include <string>
 #include <vector>
 

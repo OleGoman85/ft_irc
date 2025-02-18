@@ -1,6 +1,5 @@
 #ifndef JOIN_HPP
 #define JOIN_HPP
-
 #include <string>
 #include <vector>
 

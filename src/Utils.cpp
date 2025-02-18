@@ -1,7 +1,7 @@
 #include "../include/Utils.hpp"
-#include <sstream> // for std::stringstream and std::getline
 #include <chrono>
 #include <iomanip>
+#include <sstream>
 #include <string>
 
 /**
@@ -16,7 +16,7 @@
  * @return std::vector<std::string> A vector containing the tokens extracted from the input string.
  */
 
-std::vector<std::string> Utils::split(const std::string& str, char delimiter) 
+std::vector<std::string> Utils::split(const std::string& str, char delimiter)
 {
     std::vector<std::string> tokens; // Stores parts of the input string.
     std::stringstream ss(str);
@@ -28,8 +28,8 @@ std::vector<std::string> Utils::split(const std::string& str, char delimiter)
     return tokens;
 }
 
-
-std::string Utils::getTimestamp() {
+std::string Utils::getTimestamp()
+{
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;

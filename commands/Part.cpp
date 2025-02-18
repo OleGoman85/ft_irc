@@ -1,7 +1,5 @@
 #include "Part.hpp"
-
 #include <string>
-
 #include "../include/Server.hpp"
 
 void handlePartCommand(Server* server, int fd,

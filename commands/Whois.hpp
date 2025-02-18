@@ -1,6 +1,5 @@
 #ifndef WHOIS_HPP
 #define WHOIS_HPP
-
 #include <string>
 #include <vector>
 

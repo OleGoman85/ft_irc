@@ -1,6 +1,5 @@
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
-
 #include <map>
 #include <set>
 #include <string>

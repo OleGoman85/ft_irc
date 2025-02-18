@@ -1,7 +1,5 @@
 #include "Pass.hpp"
-
 #include <string>
-
 #include "../include/Server.hpp"
 
 /**

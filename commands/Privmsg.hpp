@@ -1,6 +1,5 @@
 #ifndef PRIVMSG_HPP
 #define PRIVMSG_HPP
-
 #include <string>
 #include <vector>
 

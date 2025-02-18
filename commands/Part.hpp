@@ -1,6 +1,5 @@
 #ifndef PART_HPP
 #define PART_HPP
-
 #include <string>
 #include <vector>
 

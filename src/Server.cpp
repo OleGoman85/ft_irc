@@ -1,16 +1,13 @@
 #include "../include/Server.hpp"
-
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
-
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-
 #include "../commands/BotCommand.hpp"
 #include "../commands/Cap.hpp"
 #include "../commands/FileCommand.hpp"

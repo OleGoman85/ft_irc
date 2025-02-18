@@ -1,6 +1,5 @@
 #ifndef TOPIC_HPP
 #define TOPIC_HPP
-
 #include <string>
 #include <vector>
 

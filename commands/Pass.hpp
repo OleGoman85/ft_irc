@@ -1,6 +1,5 @@
 #ifndef PASS_HPP
 #define PASS_HPP
-
 #include <string>
 #include <vector>
 

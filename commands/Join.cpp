@@ -1,5 +1,4 @@
 #include "Join.hpp"
-
 #include <iostream>
 #include <sstream>
 #include <string>

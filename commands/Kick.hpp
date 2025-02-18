@@ -1,6 +1,5 @@
 #ifndef KICK_HPP
 #define KICK_HPP
-
 #include <string>
 #include <vector>
 
