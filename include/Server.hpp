@@ -1,14 +1,15 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
-#include <poll.h>
-#include <sys/socket.h>
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "FileTransfer.hpp"
+#include <atomic>
+#include <map>
+#include <memory>
+#include <poll.h>
+#include <string>
+#include <sys/socket.h>
+#include <vector>
 
 /**
  * @brief Represents an IRC server.
@@ -19,8 +20,7 @@
  * - Running the main event loop using `poll()` for non-blocking I/O.
  * - Processing commands received from clients.
  */
-class Server
-{
+class Server {
 public:
     /**
      * @brief Constructs a new Server object.
@@ -32,11 +32,9 @@ public:
      * @param password The connection password required by clients.
      */
     Server(int port, const std::string& password);
-    
 
     /** @brief Destructor for the Server class. Cleans up resources. */
     ~Server();
-
 
     /**
      * @brief Runs the main server loop.
@@ -47,7 +45,6 @@ public:
      * - Sends responses back to clients when necessary.
      */
     void run();
-
 
     /**
      * @brief Removes a client from the server.
@@ -61,18 +58,16 @@ public:
      */
     void removeClient(int fd);
 
-
     /**
      * @brief Broadcasts a message to all connected clients except the sender.
      *
-     * Iterates over all connected clients and sends the message to each one, 
+     * Iterates over all connected clients and sends the message to each one,
      * except for the client with the specified sender file descriptor.
      *
      * @param message The message to be broadcasted.
      * @param sender_fd The file descriptor of the sender (who will not receive the message).
      */
     void broadcastMessage(const std::string& message, int sender_fd);
-
 
     /**
      * @brief Retrieves the current server password.
@@ -81,14 +76,12 @@ public:
      */
     const std::string& getPassword() const;
 
-
     /**
      * @brief Changes the server password.
      *
      * @param newPassword The new password to be set.
      */
     void setPassword(const std::string& newPassword);
-
 
     /**
      * @brief Retrieves the map of all connected clients.
@@ -97,14 +90,12 @@ public:
      */
     std::map<int, std::unique_ptr<Client>>& getClients();
 
-
     /**
      * @brief Retrieves the map of all channels.
      *
      * @return A reference to the internal map of channels.
      */
     std::map<std::string, Channel>& getChannels();
-
 
     /**
      * @brief Retrieves the map of all ongoing file transfers.
@@ -113,14 +104,12 @@ public:
      */
     std::map<std::string, FileTransfer>& getFileTransfers();
 
-
     /**
      * @brief Retrieves the server name.
      *
      * @return A constant reference to the server name.
      */
     const std::string& getServerName() const;
-    
 
     /**
      * @brief Sends a message to a client, ensuring that it is properly buffered if the socket is not immediately writable.
@@ -130,14 +119,12 @@ public:
      */
     void safeSend(int fd, const std::string& message);
 
-
     /**
      * @brief Sends an error message indicating that a password is required.
      *
      * @param fd The file descriptor of the client.
      */
     void passRequired(int fd);
-
 
     /**
      * @brief Sends an error message indicating that the client may not be registered.
@@ -146,7 +133,6 @@ public:
      */
     void mayNotRegistered(int fd);
 
-
     /**
      * @brief Sends an error message indicating that the client is not registered.
      *
@@ -154,17 +140,18 @@ public:
      */
     void notRegistered(int fd);
 
+    static void requestShutdown();
 
 private:
-    int _port;       ///< The port number on which the server listens.
-    int _listen_fd;  ///< The listening socket file descriptor.
+    int _port; ///< The port number on which the server listens.
+    int _listen_fd; ///< The listening socket file descriptor.
 
-    std::vector<struct pollfd> _poll_fds;  ///< List of poll descriptors (server + clients).
+    std::vector<struct pollfd> _poll_fds; ///< List of poll descriptors (server + clients).
 
-    std::string _password;  ///< Server connection password.
-    
-    std::map<int, std::unique_ptr<Client>> _clients;  ///< Active clients.
-    std::map<std::string, Channel> _channels;  ///< Active channels.
+    std::string _password; ///< Server connection password.
+
+    std::map<int, std::unique_ptr<Client>> _clients; ///< Active clients.
+    std::map<std::string, Channel> _channels; ///< Active channels.
     std::map<std::string, FileTransfer> _fileTransfers; ///< Ongoing file transfers.
 
     std::string _serverName; ///< The name of the IRC server.
@@ -180,7 +167,6 @@ private:
      */
     void setupServer();
 
-
     /**
      * @brief Accepts a new client connection.
      *
@@ -189,7 +175,6 @@ private:
      * - Adds the client to the list of tracked connections.
      */
     void acceptNewConnection();
-
 
     /**
      * @brief Handles incoming data from a client.
@@ -202,7 +187,6 @@ private:
      */
     void handleClientData(int fd);
 
-
     /**
      * @brief Processes a complete command received from a client.
      *
@@ -213,6 +197,7 @@ private:
      * @param command The complete command string received.
      */
     void processCommand(int fd, const std::string& command);
+    static std::atomic_bool s_shutdownRequested;
 };
 
-#endif  // SERVER_HPP
+#endif // SERVER_HPP

@@ -1,13 +1,4 @@
 #include "../include/Server.hpp"
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <unistd.h>
-#include <algorithm>
-#include <cstring>
-#include <iostream>
-#include <stdexcept>
 #include "../commands/BotCommand.hpp"
 #include "../commands/Cap.hpp"
 #include "../commands/FileCommand.hpp"
@@ -26,7 +17,17 @@
 #include "../commands/Who.hpp"
 #include "../commands/Whois.hpp"
 #include "../include/Utils.hpp"
+#include <algorithm>
+#include <arpa/inet.h>
+#include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <stdexcept>
+#include <unistd.h>
 
+std::atomic_bool Server::s_shutdownRequested(false);
 /**
  * @brief Flushes the output buffer for a client.
  *
@@ -49,26 +50,21 @@ static void flushClientOutBuffer(Server* server, int fd)
 
     // Ensure the client exists before proceeding.
     if (clients.find(fd) == clients.end())
-        return;  // Client not found, nothing to flush.
+        return; // Client not found, nothing to flush.
 
     // Get a pointer to the client.
     Client* client = clients[fd].get();
 
     // Attempt to send data until the buffer is empty or the socket is not writable.
-    while (!client->outBuffer.empty())
-    {
+    while (!client->outBuffer.empty()) {
         // Send as much data as possible from the buffer.
         ssize_t sent = send(fd, client->outBuffer.c_str(), client->outBuffer.size(), 0);
 
-        if (sent < 0)
-        {
+        if (sent < 0) {
             // If the socket is temporarily unavailable, exit and retry later.
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 break;
-            }
-            else
-            {
+            } else {
                 // If a serious error occurs, remove the client from the server.
                 server->removeClient(fd);
                 return;
@@ -80,16 +76,15 @@ static void flushClientOutBuffer(Server* server, int fd)
     }
 }
 
-
 /**
  * @brief Sends data to a client safely.
  *
  * This function ensures reliable data transmission to the client by:
  * 1. Attempting to flush any pending data stored in the client's `outBuffer`.
  * 2. Sending the new message immediately, if possible.
- * 3. If the socket cannot send all data (or is not ready for writing), 
+ * 3. If the socket cannot send all data (or is not ready for writing),
  *    the unsent portion is appended to the client's `outBuffer` to be sent later.
- * 
+ *
  * This prevents data loss and ensures that messages are delivered in order, even
  * if the client’s socket is temporarily unable to receive data.
  *
@@ -100,9 +95,10 @@ void Server::safeSend(int fd, const std::string& message)
 {
     // Retrieve the map of connected clients.
     auto& clients = getClients();
-    
+
     // Ensure the client exists before attempting to send data.
-    if (clients.find(fd) == clients.end()) return;  // Client not found, no action needed.
+    if (clients.find(fd) == clients.end())
+        return; // Client not found, no action needed.
 
     // Get a pointer to the client.
     Client* client = clients[fd].get();
@@ -112,27 +108,20 @@ void Server::safeSend(int fd, const std::string& message)
 
     // Attempt to send the new message immediately.
     ssize_t sent = send(fd, message.c_str(), message.size(), 0);
-    
-    if (sent < 0)
-    {
+
+    if (sent < 0) {
         // If the socket is temporarily unavailable, buffer the entire message for later.
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-        {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
             client->outBuffer += message;
-        }
-        else
-        {
+        } else {
             // For any other error, remove the client from the server.
             removeClient(fd);
         }
-    }
-    else if (static_cast<size_t>(sent) < message.size())
-    {
+    } else if (static_cast<size_t>(sent) < message.size()) {
         // If only part of the message was sent, store the remaining part in the buffer.
         client->outBuffer += message.substr(sent);
     }
 }
-
 
 /**
  * @brief Server constructor.
@@ -147,17 +136,22 @@ void Server::safeSend(int fd, const std::string& message)
  * @param password The password required for clients to connect (if applicable).
  */
 Server::Server(int port, const std::string& password)
-    : _port(port),        // Assign the specified port for the server.
-      _listen_fd(-1),     // Initialize the listening socket file descriptor as invalid.
-      _poll_fds(),        // Initialize the poll descriptor list for handling multiple clients.
-      _password(password),// Store the connection password.
-      _clients(),         // Initialize the map to manage connected clients.
-      _channels(),        // Initialize the map to store active IRC channels.
-      _serverName("AwesomeIRC") // Set the server's name (can be modified if needed).
+    : _port(port)
+    , // Assign the specified port for the server.
+    _listen_fd(-1)
+    , // Initialize the listening socket file descriptor as invalid.
+    _poll_fds()
+    , // Initialize the poll descriptor list for handling multiple clients.
+    _password(password)
+    , // Store the connection password.
+    _clients()
+    , // Initialize the map to manage connected clients.
+    _channels()
+    , // Initialize the map to store active IRC channels.
+    _serverName("AwesomeIRC") // Set the server's name (can be modified if needed).
 {
     setupServer(); // Configure the listening socket and prepare for incoming connections.
 }
-
 
 /**
  * @brief Server destructor.
@@ -166,9 +160,9 @@ Server::Server(int port, const std::string& password)
  */
 Server::~Server()
 {
-    if (_listen_fd != -1) close(_listen_fd);
+    if (_listen_fd != -1)
+        close(_listen_fd);
 }
-
 
 /**
  * @brief Sets up the server socket.
@@ -206,9 +200,9 @@ void Server::setupServer()
     // Configure the server's address structure (IPv4)
     struct sockaddr_in addr;
     std::memset(&addr, 0, sizeof(addr)); // Zero out the structure
-    addr.sin_family      = AF_INET;      // IPv4
-    addr.sin_addr.s_addr = INADDR_ANY;   // Accept connections on any network interface
-    addr.sin_port        = htons(_port); // Convert port to network byte order
+    addr.sin_family = AF_INET; // IPv4
+    addr.sin_addr.s_addr = INADDR_ANY; // Accept connections on any network interface
+    addr.sin_port = htons(_port); // Convert port to network byte order
 
     // Bind the socket to the specified address and port
     if (bind(_listen_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0)
@@ -220,15 +214,13 @@ void Server::setupServer()
 
     // Add the listening socket to the poll descriptor list for event monitoring
     struct pollfd pfd;
-    pfd.fd      = _listen_fd;
-    pfd.events  = POLLIN; // Monitor for incoming connections
+    pfd.fd = _listen_fd;
+    pfd.events = POLLIN; // Monitor for incoming connections
     pfd.revents = 0;
     _poll_fds.push_back(pfd);
 
     std::cout << "Server started on port " << _port << "\n";
 }
-
-
 
 /**
  * @brief Runs the main server loop.
@@ -244,18 +236,19 @@ void Server::setupServer()
 void Server::run()
 {
     // Main event loop – runs indefinitely while the server is active.
-    while (true)
-    {
+    while (true) {
         // Update poll events for each client socket (skip the listening socket at index 0).
         // If a client's `outBuffer` is non-empty, monitor both readability (POLLIN) and writability (POLLOUT).
-        for (size_t i = 1; i < _poll_fds.size(); ++i)
-        {
-            int   fd      = _poll_fds[i].fd;
+        if (s_shutdownRequested.load()) {
+            std::cout << "[INFO] Shutdown requested, exiting run loop...\n";
+            break;
+        }
+        for (size_t i = 1; i < _poll_fds.size(); ++i) {
+            int fd = _poll_fds[i].fd;
             auto& clients = getClients();
 
             // Ensure the client still exists before updating poll flags.
-            if (clients.find(fd) != clients.end())
-            {
+            if (clients.find(fd) != clients.end()) {
                 Client* client = clients[fd].get();
 
                 // If there is no pending output data, only check for incoming data (POLLIN).
@@ -266,41 +259,39 @@ void Server::run()
 
         // Monitor all file descriptors using `poll()` with a timeout of 100 milliseconds.
         int poll_count = poll(_poll_fds.data(), _poll_fds.size(), 100);
-        if (poll_count < 0)
-        {
+        if (poll_count < 0) {
             std::cerr << "poll error\n";
-            continue;  // Log the error and continue the loop.
+            continue; // Log the error and continue the loop.
         }
 
         // Process events for each file descriptor.
-        for (size_t i = 0; i < _poll_fds.size(); ++i)
-        {
+        for (size_t i = 0; i < _poll_fds.size(); ++i) {
             int fd = _poll_fds[i].fd;
 
             // If the socket is ready for writing (POLLOUT), flush any buffered data.
-            if (_poll_fds[i].revents & POLLOUT)
-            {
+            if (_poll_fds[i].revents & POLLOUT) {
                 flushClientOutBuffer(this, fd);
             }
 
             // If the socket is ready for reading (POLLIN):
-            if (_poll_fds[i].revents & POLLIN)
-            {
+            if (_poll_fds[i].revents & POLLIN) {
                 // If the listening socket is ready, accept a new client connection.
-                if (fd == _listen_fd)
-                {
+                if (fd == _listen_fd) {
                     acceptNewConnection();
-                }
-                else
-                {
+                } else {
                     // Otherwise, handle incoming data from an existing client.
                     handleClientData(fd);
                 }
             }
         }
     }
+    std::cout << "[INFO] Server stopping gracefully.\n";
 }
 
+void Server::requestShutdown()
+{
+    s_shutdownRequested.store(true);
+}
 
 /**
  * @brief Accepts a new client connection.
@@ -319,12 +310,11 @@ void Server::acceptNewConnection()
 {
     // Structure to store the client's address information
     struct sockaddr_in client_addr;
-    socklen_t          client_len = sizeof(client_addr);
+    socklen_t client_len = sizeof(client_addr);
 
     // Accept a new connection from the listening socket
     int client_fd = accept(_listen_fd, (struct sockaddr*)&client_addr, &client_len);
-    if (client_fd < 0)
-    {
+    if (client_fd < 0) {
         // If accept() fails due to a non-blocking socket, ignore and return.
         if (errno != EWOULDBLOCK && errno != EAGAIN)
             std::cerr << "accept failed\n";
@@ -332,17 +322,15 @@ void Server::acceptNewConnection()
     }
 
     // Set the client's socket to non-blocking mode
-    if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
-    {
+    if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0) {
         std::cerr << "Failed to set non-blocking mode for client\n";
-        close(client_fd);  // Close the socket to prevent leaks
+        close(client_fd); // Close the socket to prevent leaks
         return;
     }
 
     // Disable Nagle’s algorithm to reduce latency for real-time communication
     int flag = 1;
-    if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) < 0)
-    {
+    if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) < 0) {
         std::cerr << "setsockopt TCP_NODELAY failed for client\n";
         close(client_fd);
         return;
@@ -350,21 +338,20 @@ void Server::acceptNewConnection()
 
     // Add the client’s socket to the poll descriptor list
     struct pollfd pfd;
-    pfd.fd      = client_fd;   // Set file descriptor
-    pfd.events  = POLLIN;      // Monitor for incoming data
-    pfd.revents = 0;           // Initialize event status
-    _poll_fds.push_back(pfd);  // Register with the polling system
+    pfd.fd = client_fd; // Set file descriptor
+    pfd.events = POLLIN; // Monitor for incoming data
+    pfd.revents = 0; // Initialize event status
+    _poll_fds.push_back(pfd); // Register with the polling system
 
     // Add the new client to the server's client list
     getClients().emplace(client_fd, std::make_unique<Client>(client_fd));
 
     // Log the successful connection with client IP and port
     std::cout << "New connection from "
-              << inet_ntoa(client_addr.sin_addr)  // Convert IP to readable format
-              << ":" << ntohs(client_addr.sin_port)  // Convert port to host byte order
+              << inet_ntoa(client_addr.sin_addr) // Convert IP to readable format
+              << ":" << ntohs(client_addr.sin_port) // Convert port to host byte order
               << " (fd: " << client_fd << ")\n";
 }
-
 
 /**
  * @brief Handles incoming data from a client.
@@ -383,15 +370,13 @@ void Server::acceptNewConnection()
 void Server::handleClientData(int fd)
 {
     char buffer[512];
-    int  bytes_received = recv(fd, buffer, sizeof(buffer), 0);
+    int bytes_received = recv(fd, buffer, sizeof(buffer), 0);
 
     // If an error occurs while receiving data
-    if (bytes_received < 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
+    if (bytes_received < 0) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
             std::cerr << "recv error on fd " << fd << "\n";
-            removeClient(fd);  // Remove the client on critical errors
+            removeClient(fd); // Remove the client on critical errors
         }
         return;
     }
@@ -407,24 +392,21 @@ void Server::handleClientData(int fd)
               << getClients()[fd]->buffer << "\"\n";
 
     size_t pos;
-    
+
     // Process complete commands in the buffer
-    while (true)
-    {
+    while (true) {
         // Look for a complete command ending with "\r\n" or "\n"
         pos = getClients()[fd]->buffer.find("\r\n");
-        if (pos == std::string::npos)
-        {
+        if (pos == std::string::npos) {
             pos = getClients()[fd]->buffer.find("\n");
-            if (pos != std::string::npos && pos > 0 &&
-                getClients()[fd]->buffer[pos - 1] == '\r')
-            {
+            if (pos != std::string::npos && pos > 0 && getClients()[fd]->buffer[pos - 1] == '\r') {
                 pos -= 1;
             }
         }
 
         // If no complete command is found, exit the loop
-        if (pos == std::string::npos) break;
+        if (pos == std::string::npos)
+            break;
 
         // Extract the command from the buffer
         std::string command = getClients()[fd]->buffer.substr(0, pos);
@@ -444,20 +426,20 @@ void Server::handleClientData(int fd)
                   << command << "\"\n";
 
         // Execute the command if it's not empty
-        if (!command.empty()) processCommand(fd, command);
+        if (!command.empty())
+            processCommand(fd, command);
 
         // If the client was removed during command processing, stop further processing
-        if (getClients().find(fd) == getClients().end()) return;
+        if (getClients().find(fd) == getClients().end())
+            return;
     }
 
     // Handle client disconnection
-    if (bytes_received == 0)
-    {
+    if (bytes_received == 0) {
         std::cout << "Client (fd: " << fd << ") disconnected\n";
         removeClient(fd);
     }
 }
-
 
 /**
  * @brief Removes a client from the server and cleans up associated resources.
@@ -481,23 +463,18 @@ void Server::removeClient(int fd)
 {
     // Iterate through all channels and remove the client from them
     for (std::map<std::string, Channel>::iterator it = _channels.begin();
-         it != _channels.end(); ++it)
-    {
+        it != _channels.end(); ++it) {
         it->second.removeInvite(fd);
     }
     for (std::map<std::string, Channel>::iterator it = _channels.begin();
-         it != _channels.end();)
-    {
-        it->second.removeClient(fd);  // Remove client from this channel
+        it != _channels.end();) {
+        it->second.removeClient(fd); // Remove client from this channel
 
         // If the channel is now empty, erase it from the server
-        if (it->second.getClients().empty())
-        {
+        if (it->second.getClients().empty()) {
             std::map<std::string, Channel>::iterator eraseIt = it++;
             _channels.erase(eraseIt);
-        }
-        else
-        {
+        } else {
             ++it;
         }
     }
@@ -507,24 +484,20 @@ void Server::removeClient(int fd)
     // Remove the client from the server's client map
     getClients().erase(fd);
     // Remove the client's file descriptor from the poll descriptor vector
-    for (size_t i = 0; i < _poll_fds.size(); ++i)
-    {
-        if (_poll_fds[i].fd == fd)
-        {
+    for (size_t i = 0; i < _poll_fds.size(); ++i) {
+        if (_poll_fds[i].fd == fd) {
             _poll_fds.erase(_poll_fds.begin() + i);
             break;
         }
     }
 }
 
-
-
 /**
  * @brief Broadcasts a message to all clients except the sender.
  *
  * This function iterates over all connected clients and sends the given message
  * to each client whose file descriptor is **not** equal to `sender_fd`.
- * 
+ *
  * It uses `safeSend()` instead of `send()` to ensure that messages are sent
  * correctly even if a client socket is not immediately writable.
  *
@@ -547,17 +520,14 @@ void Server::removeClient(int fd)
 //!
 void Server::broadcastMessage(const std::string& message, int sender_fd)
 {
-    for (const auto& pair : getClients())
-    {
+    for (const auto& pair : getClients()) {
         int client_fd = pair.first;
-        if (client_fd != sender_fd)
-        {
+        if (client_fd != sender_fd) {
             safeSend(client_fd, message);
         }
     }
 }
 //!
-
 
 /**
  * @brief Processes a complete command received from a client.
@@ -575,145 +545,100 @@ void Server::processCommand(int fd, const std::string& command)
     std::cout << "\033[1;32m" << Utils::getTimestamp() << "Command from fd "
               << fd << ": " << command << "\033[0m" << std::endl;
     std::vector<std::string> tokens = Utils::split(command, ' ');
-    if (tokens.empty()) return;
+    if (tokens.empty())
+        return;
 
     std::string cmd = tokens[0];
     std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
 
-    if (cmd == "PASS")
-    {
-        if (getClients()[fd]->authState != NOT_REGISTERED)
-        {
+    if (cmd == "PASS") {
+        if (getClients()[fd]->authState != NOT_REGISTERED) {
             mayNotRegistered(fd);
             return;
         }
         handlePassCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "NICK")
-    {
-        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
-        {
+    } else if (cmd == "NICK") {
+        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
             passRequired(fd);
             return;
         }
         handleNickCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "USER")
-    {
-        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
-        {
+    } else if (cmd == "USER") {
+        if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
             passRequired(fd);
             return;
         }
         handleUserCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "JOIN")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "JOIN") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handleJoinCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "PRIVMSG")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "PRIVMSG") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handlePrivmsgCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "QUIT")
-    {
+    } else if (cmd == "QUIT") {
         handleQuitCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "PART")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "PART") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handlePartCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "KICK")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "KICK") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handleKickCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "INVITE")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "INVITE") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handleInviteCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "TOPIC")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "TOPIC") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handleTopicCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "MODE")
-    {
-        if (getClients()[fd]->authState != AUTH_REGISTERED)
-        {
+    } else if (cmd == "MODE") {
+        if (getClients()[fd]->authState != AUTH_REGISTERED) {
             notRegistered(fd);
             return;
         }
         handleModeCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "FILE")
-    {
+    } else if (cmd == "FILE") {
         handleFileCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "BOT")
-    {
+    } else if (cmd == "BOT") {
         handleBotCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "PING")
-    {
+    } else if (cmd == "PING") {
         std::string pong = "PONG ";
-        if (tokens.size() > 1) pong += tokens[1];
+        if (tokens.size() > 1)
+            pong += tokens[1];
         pong += "\r\n";
         send(fd, pong.c_str(), pong.size(), 0);
         std::cout << "Sending: " << pong;
-    }
-    else if (cmd == "WHO")
-    {
+    } else if (cmd == "WHO") {
         handleWhoCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "WHOIS")
-    {
+    } else if (cmd == "WHOIS") {
         handleWhoisCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "LIST")
-    {
+    } else if (cmd == "LIST") {
         handleListCommand(this, fd, tokens, command);
-    }
-    else if (cmd == "CAP")
-    {
+    } else if (cmd == "CAP") {
         handleCapCommand(this, fd, tokens, command);
     }
 
-    else
-    {
+    else {
         std::string reply = "421 " + cmd + " :Unknown command\r\n";
         send(fd, reply.c_str(), reply.size(), 0);
     }
 }
-
 
 /**
  * @brief Retrieves the server password.
@@ -725,7 +650,6 @@ const std::string& Server::getPassword() const
     return _password;
 }
 
-
 /**
  * @brief Updates the server password.
  *
@@ -735,7 +659,6 @@ void Server::setPassword(const std::string& newPassword)
 {
     _password = newPassword;
 }
-
 
 /**
  * @brief Retrieves the list of connected clients.
@@ -747,7 +670,6 @@ std::map<int, std::unique_ptr<Client>>& Server::getClients()
     return _clients;
 }
 
-
 /**
  * @brief Retrieves the list of active channels.
  *
@@ -757,7 +679,6 @@ std::map<std::string, Channel>& Server::getChannels()
 {
     return _channels;
 }
-
 
 /**
  * @brief Retrieves the list of ongoing file transfers.
@@ -769,7 +690,6 @@ std::map<std::string, FileTransfer>& Server::getFileTransfers()
     return _fileTransfers;
 }
 
-
 /**
  * @brief Retrieves the server name.
  *
@@ -779,7 +699,6 @@ const std::string& Server::getServerName() const
 {
     return _serverName;
 }
-
 
 /**
  * @brief Prevents clients from re-registering if already authenticated.
@@ -792,13 +711,11 @@ const std::string& Server::getServerName() const
 
 void Server::mayNotRegistered(int fd)
 {
-    if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED)
-    {
+    if (!_password.empty() && getClients()[fd]->authState == NOT_REGISTERED) {
         std::string reply = "462 :You may not reregister\r\n";
         safeSend(fd, reply);
     }
 }
-
 
 /**
  * @brief Requires a client to provide the correct password before proceeding.
@@ -813,7 +730,6 @@ void Server::passRequired(int fd)
     safeSend(fd, "464 :Password required\r\n");
     removeClient(fd);
 }
-
 
 /**
  * @brief Notifies a client that they have not yet registered.
