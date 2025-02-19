@@ -18,13 +18,12 @@
   - [Bot commands](#bot-commands)
   - [File transfer commands](#file-transfer-commands)
 - [Architecture](#architecture)
+- [Authors](#authors)
 
 
 ---
 
 ## Introduction
-
-Here’s a simpler version in English:
 
 **ft_irc combines the raw power of C++17 with the agility of a martial arts master. 🥋  
 It uses a single poll loop and non-blocking I/O to efficiently handle all connected clients quickly and smoothly—like gliding through a bamboo forest, but without the splinters.**
