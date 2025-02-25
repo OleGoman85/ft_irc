@@ -13,9 +13,9 @@
  * @brief Structure to store a channel mode change.
  */
 struct ModeChange {
-    bool add; ///< true if mode is being added ('+'), false if removed ('-')
-    char mode; ///< mode character
-    std::string param; ///< parameter if needed
+    bool add; 
+    char mode; 
+    std::string param; 
 };
 
 /**
@@ -63,7 +63,6 @@ static Channel* getChannel(Server* server, int fd,
 {
     std::map<std::string, Channel>& channels = server->getChannels();
     std::map<std::string, Channel>::iterator it = channels.find(channelName);
-    // If the channel does not exist, send an error reply and return NULL.
     if (it == channels.end()) {
         sendReply(fd, "403 " + channelName + " :No such channel\r\n");
         return NULL;
@@ -84,7 +83,6 @@ static void printCurrentModes(Server* server, int fd, Channel& channel,
 {
     std::string modes;
 
-    // Check for specific channel modes and build the mode string.
     if (channel.isInviteOnly())
         modes += "i";
     if (channel.isTopicRestricted())
@@ -94,7 +92,6 @@ static void printCurrentModes(Server* server, int fd, Channel& channel,
     if (channel.hasMode('l'))
         modes += "l";
 
-    // If no modes are set, return a default "+", otherwise prepend "+" to the mode string.
     if (modes.empty())
         modes = "+";
     else
@@ -104,7 +101,6 @@ static void printCurrentModes(Server* server, int fd, Channel& channel,
     reply << "324 " << server->getClients()[fd]->getNickname() << " "
           << channelName << " " << modes;
 
-    // Include mode parameters if required (key for +k, user limit for +l).
     if (channel.hasMode('k'))
         reply << " " << channel.getChannelKey();
     if (channel.hasMode('l'))
@@ -134,15 +130,13 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
     size_t& paramIdx,
     std::vector<ModeChange>& changes)
 {
-    // Validate that modeStr starts with '+' or '-'
     if (modeStr.empty() || (modeStr[0] != '+' && modeStr[0] != '-')) {
         sendReply(fd, "472 " + server->getClients()[fd]->getNickname() + " :Invalid mode string\r\n");
         return false;
     }
 
-    bool currentSign = (modeStr[0] == '+'); // Determines whether to add or remove modes.
+    bool currentSign = (modeStr[0] == '+'); 
 
-    // Process each character in the mode string.
     for (size_t i = 0; i < modeStr.size(); ++i) {
         char c = modeStr[i];
         if (c == '+') {
@@ -161,13 +155,11 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
         switch (c) {
         case 'i':
         case 't': {
-            // Modes 'i' (invite-only) and 't' (topic lock) require no parameters.
             channel.setMode(c, currentSign);
             changes.push_back(change);
             break;
         }
         case 'k': {
-            // Mode 'k' (channel key) requires a parameter when adding.
             if (currentSign) {
                 if (paramIdx >= tokens.size()) {
                     sendReply(fd,
@@ -185,7 +177,6 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
             break;
         }
         case 'l': {
-            // Mode 'l' (user limit) requires a numeric parameter when adding.
             if (currentSign) {
                 if (paramIdx >= tokens.size()) {
                     sendReply(fd,
@@ -215,7 +206,6 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
             break;
         }
         case 'o': {
-            // Mode 'o' (channel operator) requires a target nickname.
             if (paramIdx >= tokens.size()) {
                 sendReply(fd,
                     "461 MODE :Not enough parameters for +o/-o\r\n");
@@ -261,16 +251,13 @@ static bool parseAndApplyModeChanges(Server* server, int fd, Channel& channel,
                         return false;
                     }
                 }
-                // If target is not an operator, nothing to do.
             }
             change.param = targetNick;
             changes.push_back(change);
             break;
         }
         default: {
-            // Unknown mode character.
             sendReply(fd, "472 " + server->getClients()[fd]->getNickname() + " " + std::string(1, c) + " :is unknown mode char to me\r\n");
-            // Do not add unknown mode to changes.
             break;
         }
         }

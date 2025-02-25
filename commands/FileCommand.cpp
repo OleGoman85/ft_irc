@@ -1,7 +1,3 @@
-/************************************************************
- * FileCommand.cpp – Example implementation of the FILE command
- * (SEND/DATA/END) with correct IRC message formatting.
- ************************************************************/
 
 #include "FileCommand.hpp"
 #include <algorithm>
@@ -29,10 +25,6 @@ static std::string makeTransferKey(int senderFd, const std::string& filename)
     ss << senderFd << "_" << filename;
     return ss.str();
 }
-
-/* ------------------------------------------------------------------
- * Helper functions for each subcommand
- * ------------------------------------------------------------------ */
 
 /**
  * @brief Handles the FILE SEND command: FILE SEND <nickname> <filename> <filesize>
@@ -227,9 +219,6 @@ void handleFileCommand(Server* server, int fd,
     }
 }
 
-/* ------------------------------------------------------------------
- * Minimal base64Decode implementation
- * ------------------------------------------------------------------ */
 static const std::string base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                        "abcdefghijklmnopqrstuvwxyz"
                                        "0123456789+/";
