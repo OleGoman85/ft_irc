@@ -1,5 +1,5 @@
 
-# **How the File Transfer Command Works**
+# **How the file transfer works**
 
 This IRC server supports sending files between clients using text-based commands. The file transfer process consists of several steps:
 
@@ -10,9 +10,9 @@ This IRC server supports sending files between clients using text-based commands
 
 ---
 
-## **File Transfer Commands**
+## **File transfer commands**
 
-### **FILE SEND (Initiate File Transfer)** 
+### **FILE SEND (Initiate file transfer)** 
 The sender uses this command to notify the server about the start of file transfer.
 
 **Format:**
@@ -30,7 +30,7 @@ FILE SEND Bob myfile.txt 120
 
 ---
 
-### **FILE DATA (Transmit File Data)**
+### **FILE DATA (Transmit file data)**
 After sending `FILE SEND`, the actual file data (base64-encoded) is transmitted in chunks.
 
 **Format:**
@@ -46,7 +46,7 @@ FILE DATA myfile.txt U29tZSBleGFtcGxlIHRleHQ=
 
 ---
 
-### **FILE END (Complete the Transfer)**
+### **FILE END (Complete the transfer)**
 Once all data has been sent, you must tell the server that the transfer is finished.
 
 **Format:**
@@ -61,16 +61,16 @@ FILE END myfile.txt
 
 ---
 
-## **What Is Base64 and Why Is It Needed?**
+## **What is base64 and why is it needed?**
 Base64 is a way to encode binary files into text format. In IRC, only text-based commands can be sent, so normal binary files must be encoded first.
 
-### **How to Encode a File in Base64?**  
+### **How to encode a file in base64?**  
 On Linux/Mac:
 ```bash
 base64 myfile.txt
 ```
 
-### **How to Check the File Size?**  
+### **How to check the file size?**  
 You need to know the file size in advance to use `FILE SEND`.
 
 On Linux/Mac:
@@ -80,14 +80,14 @@ ls -l myfile.txt
 
 ---
 
-## **Testing File Transfers**
+## **Testing file transfers**
 
 ### **1. Start the Server**
 ```bash
 ./ircserv 6667 password
 ```
 
-### **2. Connect Two Clients**
+### **2. Connect two clients**
 Open two terminals and connect each to the server using `nc`:
 
 **Sender (Alice):**
@@ -100,7 +100,7 @@ nc 127.0.0.1 6667
 nc 127.0.0.1 6667
 ```
 
-### **3. Authenticate Each Client**
+### **3. Authenticate each client**
 Both clients enter:
 ```irc
 PASS password
@@ -114,7 +114,7 @@ NICK Bob
 USER Bob 0 * :Bob the Receiver
 ```
 
-### **4. Alice Sends a File**
+### **4. Alice sends a file**
 1. Check the file size (example: `12` bytes):
    ```bash
    ls -l testfile.txt
@@ -132,7 +132,7 @@ USER Bob 0 * :Bob the Receiver
    FILE END testfile.txt
    ```
 
-### **5. Bob Gets a Notification**
+### **5. Bob gets a notification**
 Bob should see something like:
 ```irc
 NOTICE Bob :Received file 'testfile.txt' (12 bytes)
@@ -143,21 +143,21 @@ If fewer bytes are sent than declared, the server should warn:
 NOTICE Alice :File transfer ended, but file is incomplete (9/12)
 ```
 
-### **6. Decoding the File on Bob’s Side**
+### **6. Decoding the file on Bob’s side**
 ```bash
 base64 -d received_base64.txt > recovered_file.txt
 ```
 
 ---
 
-## **Expected Server Behavior**
+## **Expected server behavior**
 
-### **Successful Scenario**
+### **Successful scenario**
 - Alice sends `FILE SEND`, followed by `FILE DATA` and `FILE END`.
 - Bob receives the file and a confirmation notice.
 - If the sizes match, the server says `File transfer completed`.
 
-### **Error: Incomplete File**
+### **Error: incomplete file**
 - If Alice sends only a portion of the data (`FILE DATA` does not send everything), the server should respond with:
   ```irc
   NOTICE Alice :File transfer ended, but file is incomplete (X/Y bytes)
