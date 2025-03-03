@@ -4,7 +4,7 @@
 
 ## **accept()**
 ```	
-Accepts an incoming client connection on a listening 
+Accepts an incoming client connection on a listening    
 socket and returns a new socket file descriptor for communication with the client.
 ```
 
